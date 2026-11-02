@@ -1,10 +1,13 @@
 MIT License
 
 Copyright (c) 2021 Oraibi-MoonGuard (LibMarkdown-1.0)
-Copyright (c) 2026 Twintop (LibSimpleHTMLMarkdown-1.0)
+Copyright (c) 2026 David C. Uhrig / Twintop-Frostmourne (LibSimpleHTMLMarkdown-1.0)
 
 Based on markdown.lua by Niklas Frykholm and Peter Melnichenko
 (https://github.com/mpeterv/markdown), also released under the MIT License.
+
+Copyright (c) 2008 Niklas Frykholm
+Copyright (c) 2015 Peter Melnichenko
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
