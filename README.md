@@ -1,8 +1,13 @@
-# LibMarkdown
+# LibSimpleHTMLMarkdown
 
 This is an implementation of Markdown that produces HTML suitable for
 *World of Warcraft*'s `SimpleHTML`, which supports only a very limited 
 number of HTML tags.
+
+LibSimpleHTMLMarkdown is a fork of [LibMarkdown-1.0](https://github.com/endurantgames/WoW-LibMarkdown)
+by Oraibi-MoonGuard, which is no longer maintained. It registers under its own LibStub name,
+`LibSimpleHTMLMarkdown-1.0`, so it never collides with copies of LibMarkdown that other
+AddOns still embed. See [Changes from LibMarkdown](#changes-from-libmarkdown).
 
 LibMarkdown is heavily based on the [Lua markdown library](https://github.com/mpeterv/markdown)
 created by Niklas Frykholm and further developed by Peter Melnichenko.
@@ -19,33 +24,38 @@ having to worry that you forgot to close the right tags.
 
 ## Usage
 
-The library implements only one function, `.ToHtml()`, which takes an argument of 
-either a single string or a table of strings, and returns a string with HTML formatting,
-appropriate for the `:SetText()` function on a `SimpleHTML` frame.
+The library implements only one function, `:ToHTML()` (also available as `:ToHtml()`),
+which takes an argument of either a single string or a table of strings (joined as lines),
+and returns a string with HTML formatting, appropriate for the `:SetText()` function on a
+`SimpleHTML` frame.
 
 ```
-local LMD = LibStub("LibMarkdown-1.0");
+local LSHM = LibStub("LibSimpleHTMLMarkdown-1.0");
 
 local MyFrame = CreateFrame("SimpleHTML");
 
-local text = { "# LibMarkdown",
+local text = { "# LibSimpleHTMLMarkdown",
                "",
-               "This is an implementation of Markdown that produces HTML suitatable for",
-               "*World of Warcraft*'s **SimpleHTML**, which supports only a very limited"
+               "This is an implementation of Markdown that produces HTML suitable for",
+               "*World of Warcraft*'s **SimpleHTML**, which supports only a very limited",
                "number of HTML tags." };
 
-MyFrame:SetText( LMD:ToHTML(text) );
+MyFrame:SetText( LSHM:ToHTML(text) );
 ```
 
 ## Installation
 
-Load this library as you normally would -- include it in your AddOn's TOC or XML file.
-You are probably already using `LibStub`, but if you aren't, there's a copy included
-with this AddOn.
+Load this library as you normally would -- include `LibSimpleHTMLMarkdown.xml` in your AddOn's
+TOC or XML file. You are probably already using `LibStub`, but if you aren't, there's a copy
+included with this AddOn; load `LibStub\LibStub.lua` before the library.
+
+The XML also loads an optional AceGUI widget (`SimpleHTMLMarkdown_Description`). It only
+registers when `AceGUI-3.0` is already loaded, so AddOns that don't use Ace3 can embed the
+library as-is.
 
 ## Markdown Support
 
-LibMarkdown supports the following parts of [standard markdown](https://commonmark.org/help/),
+LibSimpleHTMLMarkdown supports the following parts of [standard markdown](https://commonmark.org/help/),
 with some extensions.
 
 ```
@@ -91,7 +101,7 @@ or `[Color Help](help:colors)`.
 * List Two Item
 ```
 
-`SimpleHTML` does not support `&lt;ul&gt;` lists. However, LibMarkdown has 
+`SimpleHTML` does not support `&lt;ul&gt;` lists. However, LibSimpleHTMLMarkdown has 
 rudimentary support for lists, presenting them as separate paragraphs with a marker
 before each.
 
@@ -116,8 +126,8 @@ end of the current list.
  iv. List Item
 ```
 
-Likewise, LibMarkdown will generate pseudo-ordered lists, even though `SimpleHTML`
-doesn't support `&lt;ol&gt;`. As an extension to standard markdown, LibMarkdown
+Likewise, LibSimpleHTMLMarkdown will generate pseudo-ordered lists, even though `SimpleHTML`
+doesn't support `&lt;ol&gt;`. As an extension to standard markdown, LibSimpleHTMLMarkdown
 supports letters or Roman numerals for lists. (To distinguish between Roman numeral
 one and a lowercase I, use a square bracket for `i]`.)
 
@@ -154,7 +164,7 @@ formats are acceptable:
 &gt;    greater than   >
 ```
 
-In addition, the following entities are implemented in LibMarkdown:
+In addition, the following entities are implemented in LibSimpleHTMLMarkdown:
 
 ```
 &nbsp;    About the the size of a normal space, but non-breaking.
@@ -202,27 +212,58 @@ See below under "Configuration", however.
 
 ## Configuration
 
-LibMarkdown requires no specific configuration to use. and usually the default options
+LibSimpleHTMLMarkdown requires no specific configuration to use, and usually the default options
 will work just fine. However, you are able to change the appearance of certain unsupported
 tags -- specificially the colors -- by embedding UI escape codes.
 
 You do this by setting properties in the library object's `config` table.
 
 ``` 
-local LMD = LibStub("LibMarkdown-1.0.lua");
+local LSHM = LibStub("LibSimpleHTMLMarkdown-1.0");
 
-LMD.config["em"]          = "|cffbbbb00"; -- emphasized text in yellow
-LMD.config["/em"]         = "|r"; -- this ends the yellow text; close your tags!
-LMD.config["blockquote"]  = "|cff00dddd"; -- blockquotes in cyan
-LMD.config["/blockquote"] = "|r";
+LSHM.config["em"]          = "|cffbbbb00"; -- emphasized text in yellow
+LSHM.config["/em"]         = "|r"; -- this ends the yellow text; close your tags!
+LSHM.config["blockquote"]  = "|cff00dddd"; -- blockquotes in cyan
+LSHM.config["/blockquote"] = "|r";
 
-LMD.config["list_marker"] = "|TInterface\\MINIMAP\\TempleofKotmogu_ball_purple.PNG:0|t";
-                            -- a purple ball for the list marker
+LSHM.config["list_marker"] = "|TInterface\\MINIMAP\\TempleofKotmogu_ball_purple.PNG:0|t";
+                             -- a purple ball for the list marker
 ```
 
-To see what you can change, see the source or type `/script LibStub("LibMarkdown-1.0"):ShowConfig();'
+To see what you can change, see the source or type `/script LibStub("LibSimpleHTMLMarkdown-1.0"):ShowConfig()`
 
 ## Demo Frames
 
-Included in this package is a `Demo.lua` file that you can add to `LibMarkdown-1.0.xml`.
-It has some sample code; to view it once it's loaded, type `/script LMDDemoFrame:Show()`.
+Included in this package is a `Demo.lua` file that you can enable in `LibSimpleHTMLMarkdown.xml`.
+It has some sample code; to view it once it's loaded, type `/script LSHMDemoFrame:Show()`.
+
+## Changes from LibMarkdown
+
+LibSimpleHTMLMarkdown 1.0 minor 1 starts from LibMarkdown-1.0 minor 9, the last version on
+[GitHub](https://github.com/endurantgames/WoW-LibMarkdown) (CurseForge's last file is minor 7).
+
+### Renamed
+
+- The library registers as `LibSimpleHTMLMarkdown-1.0`, starting again at minor 1.
+- The files are `LibSimpleHTMLMarkdown.lua`, `.xml`, and `.toc`.
+- The AceGUI widget type is `SimpleHTMLMarkdown_Description`; its globals are
+  `LIBSIMPLEHTMLMARKDOWN_WIDGET_CONFIG` and `LIBSIMPLEHTMLMARKDOWN_WIDGET_LINKHANDLER_POPUP`;
+  its methods and config key are `GetLibSimpleHTMLMarkdown`, `SetLibSimpleHTMLMarkdownConfig`,
+  and `LibSimpleHTMLMarkdownConfig`.
+- The demo frame is `LSHMDemoFrame`.
+- LibMarkdown's unfinished `SimpleMarkdown.lua` rewrite was never loaded and is not included.
+
+### Fixed
+
+- Loading a copy no newer than one already loaded no longer errors.
+- `:ToHTML()` accepts a table of strings, as documented; it previously always printed an error.
+  A table with a non-string item is now rejected instead of erroring inside the parser.
+- Roman numeral lists (`i.`, `ii.`) are typed as roman numerals.
+- A code fence on the last line no longer errors.
+- `<user@example.org>` autolinks no longer call an undefined `encode_email_address`.
+- Reference links and images no longer index a missing `link_database`.
+- Empty text passed through tab expansion or code encoding returns `""` instead of erroring.
+- Blank lines inside a blockquote put a non-breaking space between their line breaks.
+- The AceGUI widget only registers when `AceGUI-3.0` is loaded, keeps its library reference
+  (it was overwritten with `false`), and its default list marker uses the `list_marker` key
+  the library actually reads.

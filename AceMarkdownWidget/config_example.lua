@@ -4,13 +4,13 @@ error([===[
     that can serve as a base for customizing your own default settings.
 
 ]===]);
-local myConfig = _G[ "ACEMARKDOWNWIDGET_CONFIG" ];
+local myConfig = _G[ "LIBSIMPLEHTMLMARKDOWN_WIDGET_CONFIG" ];
 
 -- myConfig[ "HyperlinksEnabled"  ]                  = true;
 -- myConfig[ "HyperlinkFormat"    ]                  = "[ " .. "|c" .. "ff00dd00" .. "|H%s|h%s|h" .. "|r" .. " ] ";
 -- myConfig[ "LargeFont"          ]                  = "OptionsFontLarge";
 -- myConfig[ "FontStep"           ]                  = 2;
--- myConfig[ "LibMarkdownOptions" ][ "list-marker" ] = "|TInterface\\COMMON\\Indicator-Yellow.PNG:0|t";
+-- myConfig[ "LibSimpleHTMLMarkdownConfig" ][ "list_marker" ] = "|TInterface\\COMMON\\Indicator-Yellow.PNG:0|t";
 
 -- myConfig[ "HtmlStyles" ][ "Normal"    ][ "FontFile"       ] , _ = select(1, GameFontNormal:GetFont());
 -- myConfig[ "HtmlStyles" ][ "Normal"    ][ "FontSize"       ] , _ = select(2, GameFontNormal:GetFont());

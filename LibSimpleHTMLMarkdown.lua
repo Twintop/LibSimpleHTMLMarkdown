@@ -1,9 +1,12 @@
+---@diagnostic disable: inject-field
+-- LibSimpleHTMLMarkdown: a fork of LibMarkdown-1.0 (Oraibi-MoonGuard, https://github.com/endurantgames/WoW-LibMarkdown)
 -- lua implementation of markdown originally from https://github.com/mpeterv/markdown
 
-local  MARKDOWN10 = "LibMarkdown-1.0";
-local  MARKDOWN10_MINOR = 9;
+local  MARKDOWN10 = "LibSimpleHTMLMarkdown-1.0";
+local  MARKDOWN10_MINOR = 1;
 if not LibStub then error(MARKDOWN10 .. " requires LibStub."); end;
 local  LibMarkdown = LibStub:NewLibrary(MARKDOWN10, MARKDOWN10_MINOR);
+if not LibMarkdown then return; end;
 
 LibMarkdown.name = MARKDOWN10
 LibMarkdown.minor = MARKDOWN10_MINOR;
@@ -102,14 +105,16 @@ function LibMarkdown.split(text, sep)
 
 -- converts tabs to spaces
 function LibMarkdown.detab(text)
-   local tab_width = 4
-   local function rep(match)
-      local spaces = -match:len()
-      while spaces<1 do spaces = spaces + tab_width end
-      return match .. string.rep(" ", spaces)
+   if text ~= nil then
+      local tab_width = 4
+      local function rep(match)
+         local spaces = -match:len()
+         while spaces<1 do spaces = spaces + tab_width end
+         return match .. string.rep(" ", spaces)
+      end
+      text = text:gsub("([^\n]-)\t", rep)
    end
-   text = text:gsub("([^\n]-)\t", rep)
-   return text
+   return text or ""
 end
 
 -- applies string.find for every pattern in the list and returns the first match
@@ -417,7 +422,7 @@ function LibMarkdown.classify(self, line)
    if                      line:match("^ ? ? ?([ivxIVX]+)[%.%]][ \t]+(.*)") then
       local number, text = line:match("^ ? ? ?([ixvIVX]+)[%.%]][ \t]*(.*)")
       info.type = "list_item"
-      info_list_type = "roman_numeric"
+      info.list_type = "roman_numeric"
       info.number = number
       info.text = text
       return info
@@ -693,7 +698,7 @@ function LibMarkdown.blockquotes(self, lines)
    local function process_blockquote(lines)
       local raw = self:escape_special_chars(lines[1].text)
       for i = 2,#lines do
-         raw = raw .. self:escape_special_chars(lines[i].text) .. (lines[i].text == "" and "<br /> " .. ' <br />"' or '')
+         raw = raw .. self:escape_special_chars(lines[i].text) .. (lines[i].text == "" and "<br /> " .. self.config.nbsp .. ' <br />"' or '')
       end
       local bt = self:block_transform(raw)
       -- if not bt:find("<pre>") then bt = LibMarkdown.indent(bt) end
@@ -729,7 +734,7 @@ function LibMarkdown.codeblocks(self, lines)
 
       local stop = #lines
       for i = start+1, #lines do
-         if     lines[i+1].type == "backticks" then return start, i+1;
+         if     lines[i+1] ~= nil and lines[i+1].type == "backticks" then return start, i+1;
          elseif lines[i].type ~= "indented" and lines[i].type ~= "blank" then
             stop = i-1
             break
@@ -860,13 +865,15 @@ end
 -- the point is that in code, these characters are literals,
 -- and lose their special markdown meanings.
 function LibMarkdown.encode_code(self, s)
-   s = s:gsub("%&", "&amp;")
-   s = s:gsub("<", "&lt;")
-   s = s:gsub(">", "&gt;")
-   -- for k,v in pairs(self.escape_table) do
-   --    s = s:gsub("%"..k, v)
-   -- end
-   return s
+   if s ~= nil then
+      s = s:gsub("%&", "&amp;")
+      s = s:gsub("<", "&lt;")
+      s = s:gsub(">", "&gt;")
+      -- for k,v in pairs(self.escape_table) do
+      --    s = s:gsub("%"..k, v)
+      -- end
+   end
+   return s or ""
 end
 
 -- handle backtick blocks.
@@ -909,7 +916,7 @@ function LibMarkdown.encode_alt(self, s)
 end
 
 -- forward declaration for link_db as returned by strip_link_definitions.
--- local self.link_database
+LibMarkdown.link_database = {}
 
 -- handle image references
 function LibMarkdown.images(self, text)
@@ -1004,7 +1011,7 @@ function LibMarkdown.auto_links(self, text)
    end
    local function mail(s)
       s = self:unescape_special_chars(s)
-      local address = encode_email_address("mailto:" .. s)
+      local address = "mailto:" .. s
       return self:add_escape("<a href=\"" .. address .. "\">") .. s .. "</a>"
    end
    -- links
@@ -1169,17 +1176,17 @@ function LibMarkdown.ToHTML(self, param)
                        self:markdown(param) ..
                      self.config["/body"] .. 
                    self.config["/html"];
-     elseif param_type == "list"
+     elseif param_type == "table"
             then local all_strings = true;
 
                  for _, item in ipairs(param)
-                 do if type(item) ~= "string" then all_strings = true; break; end;
+                 do if type(item) ~= "string" then all_strings = false; break; end;
                  end;
 
                  if all_strings 
                  then return self.config.html .. 
                                self.config.body .. 
-                                 self:markdown(param) ..
+                                 self:markdown(table.concat(param, "\n")) ..
                                self.config["/body"] .. 
                              self.config["/html"];
                  else print(ERRMESSAGE);

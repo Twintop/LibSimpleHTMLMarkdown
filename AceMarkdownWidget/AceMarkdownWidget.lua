@@ -6,12 +6,12 @@
 -- /_/   \_\___\___|_|  |_|\__,_|_|  |_|\_\__,_|\___/ \_/\_/ |_| |_|\_/\_/  |_|\__,_|\__, |\___|\__|
 --                                                                                   |___/          
 
-local AceGUI         = LibStub("AceGUI-3.0");
-local widget_type    = "LMD30_Description";
-local widget_version = 4;
+local AceGUI         = LibStub("AceGUI-3.0", true);
+if not AceGUI then return; end;
+local widget_type    = "SimpleHTMLMarkdown_Description";
+local widget_version = 1;
 
-local LMD = LibStub("LibMarkdown-1.0");
-LMD = not LMD and error("[|cffff0000AceMarkdownWidget|r] Missing LibMarkdown-1.0");
+if not LibStub("LibSimpleHTMLMarkdown-1.0", true) then error("[|cffff0000AceMarkdownWidget|r] Missing LibSimpleHTMLMarkdown-1.0"); end;
 
 local gameFont = {};
   gameFont.FontFile, gameFont.FontSize, gameFont.FontFlags = GameFontNormal:GetFont();
@@ -27,15 +27,15 @@ local function CopyTable(t) local copy = {} for k, v in pairs(t) do copy[k] = v 
 --   \_/\_/ |_|\__,_|\__, |\___|\__|\____\___/|_| |_|_| |_|\__, |
 --                   |___/                                 |___/ 
 --
-_G["ACEMARKDOWNWIDGET_CONFIG"] = 
+_G["LIBSIMPLEHTMLMARKDOWN_WIDGET_CONFIG"] = 
 { ["HyperlinksEnabled"] = true,
   ["HyperlinkFormat"]   = "[" .. "|c" .. "ff00dd00" .. "|H%s|h%s|h" .. "|r" .. "]",
   ["LargeFont"] = "OptionsFontLarge",
 
   ["FontStep"] = 2,
 
-  ["LibMarkdownConfig"] = 
-    { ["list-marker"] = "|TInterface\\COMMON\\Indicator-Yellow.PNG:0|t",
+  ["LibSimpleHTMLMarkdownConfig"] = 
+    { ["list_marker"] = "|TInterface\\COMMON\\Indicator-Yellow.PNG:0|t",
     },
    
   ["HtmlStyles"] =
@@ -178,7 +178,7 @@ local popupMethods =
   ["Show"] = 
     function(self, dest, link, text, ... )
       if not link then return nil end;
-      local popName = "ACEMARKDOWNWIDGET_LINKHANDLER_POPUP";
+      local popName = "LIBSIMPLEHTMLMARKDOWN_WIDGET_LINKHANDLER_POPUP";
 
       local data =
       { text = (self:GetPrefixText() or "") .. (self:GetText() or ""):gsub("{text}", text):gsub("{link}", link); 
@@ -404,7 +404,7 @@ local widgetMethods =
            self.html.Html = nil;
            self.html:SetText();
       else self.html.Markdown = markdown;
-           local html = self:GetLibMarkdown():ToHtml(markdown);
+           local html = self:GetLibSimpleHTMLMarkdown():ToHtml(markdown);
            self.html.Html = html;
            self.html:SetText(html);
       end;
@@ -427,16 +427,16 @@ local widgetMethods =
       return protocol;
     end,
 
-  ["GetLibMarkdown"] =
+  ["GetLibSimpleHTMLMarkdown"] =
     function(self)
-      self.LibMarkdown = self.LibMarkdown or LibStub("LibMarkdown-1.0");
-      return self.LibMarkdown
+      self.LibSimpleHTMLMarkdown = self.LibSimpleHTMLMarkdown or LibStub("LibSimpleHTMLMarkdown-1.0");
+      return self.LibSimpleHTMLMarkdown
     end,
 
-  ["SetLibMarkdownConfig"] =
+  ["SetLibSimpleHTMLMarkdownConfig"] =
     function(self, settings)
       if not settings then return end;
-      local LMD = self:GetLibMarkdown();
+      local LMD = self:GetLibSimpleHTMLMarkdown();
       for k, v in pairs(settings) do LMD.config[k] = v end;
       return LMD;
     end,
@@ -528,7 +528,7 @@ local widgetMethods =
       self:SetClickHandler(           config.ClickHandler       );
       self:SetMouseOverHandler(       config.MouseOverHandler   );
       self:SetFontStepFromFontObject( config.LargeFont          );
-      self:SetLibMarkdownConfig(      config.LibMarkdownConfig );
+      self:SetLibSimpleHTMLMarkdownConfig(      config.LibSimpleHTMLMarkdownConfig );
 
     end,
 
@@ -593,7 +593,7 @@ local widgetMethods =
 
  ["OnAcquire"] = 
    function(self)
-     self:ApplyConfiguration(_G["ACEMARKDOWNWIDGET_CONFIG"]);
+     self:ApplyConfiguration(_G["LIBSIMPLEHTMLMARKDOWN_WIDGET_CONFIG"]);
      self:SetWidth(200);
      self:SetText();
   end,

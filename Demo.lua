@@ -1,6 +1,6 @@
 -- Create our library object.
 --
-local LMD = LibStub("LibMarkdown-1.0");
+local LMD = LibStub("LibSimpleHTMLMarkdown-1.0");
 
 -- Here's the sample markdown text we'll use. 
 -- Note: [====[ ... ]====] is the same as a quoted string in lua, as 
@@ -9,8 +9,8 @@ local LMD = LibStub("LibMarkdown-1.0");
 local text = [==============[
 ![This is an image.](Interface\\QuestionFrame\\answer-ChromieScenario-Chromie-small.PNG right 200x100 "It's Chromie Time!") 
 
-LibMarkdown Demo
-================
+LibSimpleHTMLMarkdown Demo
+==========================
 
 This is a `SimpleHTML` frame. {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8}
 
@@ -27,7 +27,7 @@ This is a `SimpleHTML` frame. {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8}
  * You can press &quot;ESC&quot; to close this window.
  + Or you can use [this link](window:close) to close it.
 ^
-    local LMD = LibStub("LibMarkdown-1.0");
+    local LMD = LibStub("LibSimpleHTMLMarkdown-1.0");
     print("This is a code block.");
 
 > This is a blockquote.
@@ -43,7 +43,7 @@ This is a `SimpleHTML` frame. {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8}
 
 ## HTML in Markdown
 
-<p>LibMarkdown passes HTML through unchanged.</p>
+<p>LibSimpleHTMLMarkdown passes HTML through unchanged.</p>
 <p>If HTML tags aren't properly closed, SimpleHTML won't display any of the HTML.</p>
 <p>SimpleHTML won't show the contents of tags it doesn't recognize, such 
 as <strong>the &lt;strong&gt; tag</strong> (<-- see, this wasn't displayed), 
@@ -52,8 +52,8 @@ even if they're valid HTML.</p>
 ]==============];
 
 -- ]==============]; local more_text = [==============[
-local frame = _G["LMDDemoFrame"] or CreateFrame("Frame", "LMDDemoFrame", UIParent, "SimplePanelTemplate");
-frame.html  = frame.html or CreateFrame("SimpleHTML", "LMDDemoFrameSimpleHTML", frame);
+local frame = _G["LSHMDemoFrame"] or CreateFrame("Frame", "LSHMDemoFrame", UIParent, "SimplePanelTemplate");
+frame.html  = frame.html or CreateFrame("SimpleHTML", "LSHMDemoFrameSimpleHTML", frame);
 
 frame:SetSize(640,600);
 frame:SetPoint("CENTER", UIParent, "CENTER", 30, 30);
@@ -76,7 +76,7 @@ frame.html:SetFontObject("p", "GameFontNormal");
 frame.html:SetTextColor("p", 1, 1, 1, 1);
 
 frame.html:SetHyperlinkFormat("[|cff3399ff|H%s|h%s|h|r]");
-tinsert(UISpecialFrames, "LMDDemoFrame");
+tinsert(UISpecialFrames, "LSHMDemoFrame");
 
 -- This is a minimal hyperlink handler...
 --
@@ -85,7 +85,7 @@ frame.html:SetScript("OnHyperlinkClick",
     if     link=="window:close" 
     then   f:GetParent():Hide() 
     elseif link:match("https?://")
-    then   StaticPopup_Show("LIBMARKDOWNDEMOFRAME_URL", nil, nil, { title = text, url = link });
+    then   StaticPopup_Show("LIBSIMPLEHTMLMARKDOWNDEMOFRAME_URL", nil, nil, { title = text, url = link });
     end 
   end);
 
@@ -94,7 +94,7 @@ frame.html:SetScript("OnHyperlinkLeave", function(f) f:SetCursor()              
 
 -- ... and this is the popup it opens.
 --
-StaticPopupDialogs["LIBMARKDOWNDEMOFRAME_URL"] = 
+StaticPopupDialogs["LIBSIMPLEHTMLMARKDOWNDEMOFRAME_URL"] = 
 { OnShow = 
     function(self, data)
       self.text:SetFormattedText("Here's a link to " .. data.title);
@@ -120,4 +120,4 @@ frame:SetScript("OnShow",
     print(LMD:ToHTML(text)); 
   end);
 
-print("[|cff00ddddLibMarkdown|r] demo loaded. Type |cff00dddd/script LMDDemoFrame:Show()|r to see it.");
+print("[|cff00ddddLibSimpleHTMLMarkdown|r] demo loaded. Type |cff00dddd/script LSHMDemoFrame:Show()|r to see it.");
