@@ -9,7 +9,7 @@ by Oraibi-MoonGuard, which is no longer maintained. It registers under its own L
 `LibSimpleHTMLMarkdown-1.0`, so it never collides with copies of LibMarkdown that other
 AddOns still embed. See [Changes from LibMarkdown](#changes-from-libmarkdown).
 
-LibMarkdown is heavily based on the [Lua markdown library](https://github.com/mpeterv/markdown)
+LibMarkdown (and thus LibSimpleHTMLMarkdown) is heavily based on the [Lua markdown library](https://github.com/mpeterv/markdown)
 created by Niklas Frykholm and further developed by Peter Melnichenko.
 
 All versions of this code are released under the **MIT License**, including this library.
