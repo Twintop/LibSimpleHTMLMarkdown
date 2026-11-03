@@ -6,19 +6,19 @@
 -- /_/   \_\___\___|_|  |_|\__,_|_|  |_|\_\__,_|\___/ \_/\_/ |_| |_|\_/\_/  |_|\__,_|\__, |\___|\__|
 --                                                                                   |___/          
 
-local AceGUI         = LibStub("AceGUI-3.0", true);
-if not AceGUI then return; end;
-local widget_type    = "SimpleHTMLMarkdown_Description";
-local widget_version = 1;
+local AceGUI         = LibStub("AceGUI-3.0", true)
+if not AceGUI then return end
+local widget_type    = "SimpleHTMLMarkdown_Description"
+local widget_version = 1
 
-if not LibStub("LibSimpleHTMLMarkdown-1.0", true) then error("[|cffff0000AceMarkdownWidget|r] Missing LibSimpleHTMLMarkdown-1.0"); end;
+if not LibStub("LibSimpleHTMLMarkdown-1.0", true) then error("[|cffff0000AceMarkdownWidget|r] Missing LibSimpleHTMLMarkdown-1.0") end
 
-local gameFont = {};
-  gameFont.FontFile, gameFont.FontSize, gameFont.FontFlags = GameFontNormal:GetFont();
-  gameFont.red, gameFont.green, gameFont.blue = GameFontNormal:GetTextColor();
-  gameFont.Spacing = GameFontNormal:GetSpacing();
+local gameFont = {}
+  gameFont.FontFile, gameFont.FontSize, gameFont.FontFlags = GameFontNormal:GetFont()
+  gameFont.red, gameFont.green, gameFont.blue = GameFontNormal:GetTextColor()
+  gameFont.Spacing = GameFontNormal:GetSpacing()
 
-local function CopyTable(t) local copy = {} for k, v in pairs(t) do copy[k] = v end return copy end;
+local function CopyTable(t) local copy = {} for k, v in pairs(t) do copy[k] = v end return copy end
 
 --           _     _            _    ____             __ _       
 -- __      _(_) __| | __ _  ___| |_ / ___|___  _ __  / _(_) __ _ 
@@ -157,7 +157,7 @@ _G["LIBSIMPLEHTMLMARKDOWN_WIDGET_CONFIG"] =
       },
     },
   },
-};
+}
 
 --                                __  __      _   _               _     
 --  _ __   ___  _ __  _   _ _ __ |  \/  | ___| |_| |__   ___   __| |___ 
@@ -170,20 +170,20 @@ local popupMethods =
 { ["GetButtonText" ] = function(self        )                          return self.ButtonText end,
   ["GetPrefixText" ] = function(self        )                          return self.PrefixText end,
   ["GetText"       ] = function(self        )                          return self.Text       end,
-  ["SetButtonText" ] = function(self, value ) self.ButtonText = value; return self            end,
-  ["SetPrefixText" ] = function(self, value ) self.PrefixText = value; return self            end,
-  ["SetText"       ] = function(self, value ) self.Text = value;       return self            end,
+  ["SetButtonText" ] = function(self, value ) self.ButtonText = value return self            end,
+  ["SetPrefixText" ] = function(self, value ) self.PrefixText = value return self            end,
+  ["SetText"       ] = function(self, value ) self.Text = value       return self            end,
   ["GetProtocol"   ] = function(self        )                          return self.protocol   end,
 
   ["Show"] = 
     function(self, dest, link, text, ... )
-      if not link then return nil end;
-      local popName = "LIBSIMPLEHTMLMARKDOWN_WIDGET_LINKHANDLER_POPUP";
+      if not link then return nil end
+      local popName = "LIBSIMPLEHTMLMARKDOWN_WIDGET_LINKHANDLER_POPUP"
 
       local data =
-      { text = (self:GetPrefixText() or "") .. (self:GetText() or ""):gsub("{text}", text):gsub("{link}", link); 
+      { text = (self:GetPrefixText() or "") .. (self:GetText() or ""):gsub("{text}", text):gsub("{link}", link), 
         link = link,
-      };
+      }
 
       StaticPopupDialogs[popName] =
       { text                   = "",
@@ -203,21 +203,21 @@ local popupMethods =
 
         OnShow =
           function(self, data)
-            self.text:SetFormattedText(data.text);
-            self.editBox:SetText(data.link);                        
-            self.editBox:SetAutoFocus(true);
-            self.editBox:HighlightText();                          
-            self.editBox:SetWidth(300);
-            self.button1:SetPoint("RIGHT", self, "RIGHT", -12, 0); 
-            self.text:SetJustifyH("LEFT");
-            self.text:SetSpacing(3);
+            self.text:SetFormattedText(data.text)
+            self.editBox:SetText(data.link)                        
+            self.editBox:SetAutoFocus(true)
+            self.editBox:HighlightText()                          
+            self.editBox:SetWidth(300)
+            self.button1:SetPoint("RIGHT", self, "RIGHT", -12, 0) 
+            self.text:SetJustifyH("LEFT")
+            self.text:SetSpacing(3)
         end,
 
-      };
+      }
 
-      StaticPopup_Show(popName, nil, nil, data);
+      StaticPopup_Show(popName, nil, nil, data)
     end,
-};
+}
     
 --  _     _             _ ____  _         _      __  __      _   _               _     
 -- | |__ | |_ _ __ ___ | / ___|| |_ _   _| | ___|  \/  | ___| |_| |__   ___   __| |___ 
@@ -253,25 +253,25 @@ local htmlStyleMethods =
   ["SetTextColor"      ] = 
     function(self, r, g, b) 
       self.red, self.green, self.blue = r, g, b 
-      return self;
+      return self
     end,
 
   ["SetFont"           ] = 
     function(self, file, size, flags) 
-      self.FontFile, self.FontSize, self.FontFlags = file, size, flags; 
+      self.FontFile, self.FontSize, self.FontFlags = file, size, flags 
       return self 
     end,
 
   ["GetFontSize"] = 
     function(self) 
-      return (self.FontSize or 10) + (self.FontStepFactor or 0) * (self.widget.FontStep or 2);
+      return (self.FontSize or 10) + (self.FontStepFactor or 0) * (self.widget.FontStep or 2)
     end,
 
   ["GetFont"] = 
     function(self) 
       return self:GetFontFile(), self:GetFontSize(), self:GetFontFlags() 
     end,
-};
+}
 
 --  _     _             _ _____                         _   _                 _ _               
 -- | |__ | |_ _ __ ___ | |  ___| __ __ _ _ __ ___   ___| | | | __ _ _ __   __| | | ___ _ __ ___ 
@@ -282,40 +282,40 @@ local htmlStyleMethods =
 local htmlFrameHandlers = 
 { ["OnHyperlinkClick"] = 
     function(self, link, text, ...)
-      ResetCursor();
+      ResetCursor()
       if    self.widget:GetClickHandler()
       then  return self.widget:FireClickHandler(link, text, ...)
-      else  local  protocolName, dest = link:match("^(%a+)://(.+)");
+      else  local  protocolName, dest = link:match("^(%a+)://(.+)")
             local  Protocol = self.widget:GetLinkProtocol(protocolName) 
-                   or self.widget:GetLinkProtocol("default");
+                   or self.widget:GetLinkProtocol("default")
             if     Protocol and Protocol:GetCustomClick()
             then   Protocol:FireCustomClick(dest or text, link, text, ...)
             elseif Protocol and Protocol:GetPopup()
             then   Protocol:ShowPopup(dest or text, link, text, ...)
             else   print("[" .. text .. "]: " .. dest)
             end
-      end;
+      end
     end,
     
   ["OnHyperlinkEnter"] = 
     function(self, link, text, button, ...)
       if   self.widget:GetMouseOverHandler()
       then self.widget:FireMouseOverHandler(link, text, button, ...)
-      else local protocolName = link:match("^(%a+):");
+      else local protocolName = link:match("^(%a+):")
            local  Protocol = self.widget:GetLinkProtocol(protocolName)
-                  or self.widget:GetLinkProtocol("default");
+                  or self.widget:GetLinkProtocol("default")
            if     Protocol and Protocol:GetMouseOver()
            then   Protocol:FireMouseOver(link, text, button, ...)
            elseif Protocol
-           then   SetCursor(Protocol:GetCursor());
-           else   ResetCursor();
-           end;
-      end;
+           then   SetCursor(Protocol:GetCursor())
+           else   ResetCursor()
+           end
+      end
     end,
 
   ["OnHyperlinkLeave"] =
     function() 
-      ResetCursor();
+      ResetCursor()
     end,
 }
 --
@@ -338,20 +338,20 @@ local linkProtocolMethods =
 
   ["RegisterPopup"] =
     function(self)
-      local popup = {};
-      for method, func in pairs(popupMethods) do popup[method] = func; end;
-      self.Popup             = popup;
-      popup.protocol         = self;
-      popup.widget           = self.widget;
-      return popup;
+      local popup = {}
+      for method, func in pairs(popupMethods) do popup[method] = func end
+      self.Popup             = popup
+      popup.protocol         = self
+      popup.widget           = self.widget
+      return popup
     end,
 
   ["SetPopup"] =
     function(self, text, buttonText, prefix)
-      local popup = self:GetPopup();
-      if text then popup:SetText(text) end;
-      if buttonText then popup:SetButtonText(buttonText) end;
-      if prefix then popup:SetPrefixText(prefix) end;
+      local popup = self:GetPopup()
+      if text then popup:SetText(text) end
+      if buttonText then popup:SetButtonText(buttonText) end
+      if prefix then popup:SetPrefixText(prefix) end
       return self
     end,
 
@@ -362,10 +362,10 @@ local linkProtocolMethods =
       elseif self.Cursor:match("%.")
       then   self.Cursor = "Interface\\\\CURSOR\\\\" .. cursor
       else   self.Cursor = "Interface\\\\CURSOR\\\\" .. cursor .. ".PNG"
-      end;
+      end
       return self
     end,
-};
+}
 -- 
 --           _     _            _   __  __      _   _               _     
 -- __      _(_) __| | __ _  ___| |_|  \/  | ___| |_| |__   ___   __| |___ 
@@ -393,63 +393,63 @@ local widgetMethods =
   ["SetMouseOverHandler"  ] = function(self, func  ) self.MouseOverHandler = func return self                            end ,
   ["SetFontStep"          ] = function(self, value ) self.FontStep = value return self                                   end ,
   ["SetHyperlinkFormat"   ] = function(self, value ) self.html:SetHyperlinkFormat(value)                                 end ,
-  ["SetHyperlinksEnabled" ] = function(self, value ) self.html:SetHyperlinksEnabled(value) ; return self                 end ,
+  ["SetHyperlinksEnabled" ] = function(self, value ) self.html:SetHyperlinksEnabled(value)  return self                 end ,
   ["SetImage"             ] = function(            )                                                                     end ,
   ["SetImageSize"         ] = function(            )                                                                     end ,
 
   ["SetText"] = 
     function(self, markdown) 
       if   not markdown 
-      then self.html.Markdown = nil;
-           self.html.Html = nil;
-           self.html:SetText();
-      else self.html.Markdown = markdown;
-           local html = self:GetLibSimpleHTMLMarkdown():ToHtml(markdown);
-           self.html.Html = html;
-           self.html:SetText(html);
-      end;
-      return self;
+      then self.html.Markdown = nil
+           self.html.Html = nil
+           self.html:SetText()
+      else self.html.Markdown = markdown
+           local html = self:GetLibSimpleHTMLMarkdown():ToHtml(markdown)
+           self.html.Html = html
+           self.html:SetText(html)
+      end
+      return self
     end,
 
   ["RegisterLinkProtocol"] = 
     function(self, protocolName, protocolData)
       local protocol
       if type(protocolData) == "string" and self.LinkProtocols[protocolData]
-      then protocolData = self.LinkProtocols[protocolData];
-      end;
-      if type(protocolData) == "table" then protocol = CopyTable(protocolData); else protocol = {}; end;
-      protocol.name   = protocolName;
-      protocol.widget = self;
-      for method, func in pairs(linkProtocolMethods) do protocol[method] = func end;
-      self.LinkProtocols = self.LinkProtocols or {};
-      self.LinkProtocols[protocolName] = protocol;
-      protocol:RegisterPopup();
-      return protocol;
+      then protocolData = self.LinkProtocols[protocolData]
+      end
+      if type(protocolData) == "table" then protocol = CopyTable(protocolData) else protocol = {} end
+      protocol.name   = protocolName
+      protocol.widget = self
+      for method, func in pairs(linkProtocolMethods) do protocol[method] = func end
+      self.LinkProtocols = self.LinkProtocols or {}
+      self.LinkProtocols[protocolName] = protocol
+      protocol:RegisterPopup()
+      return protocol
     end,
 
   ["GetLibSimpleHTMLMarkdown"] =
     function(self)
-      self.LibSimpleHTMLMarkdown = self.LibSimpleHTMLMarkdown or LibStub("LibSimpleHTMLMarkdown-1.0");
+      self.LibSimpleHTMLMarkdown = self.LibSimpleHTMLMarkdown or LibStub("LibSimpleHTMLMarkdown-1.0")
       return self.LibSimpleHTMLMarkdown
     end,
 
   ["SetLibSimpleHTMLMarkdownConfig"] =
     function(self, settings)
-      if not settings then return end;
-      local LMD = self:GetLibSimpleHTMLMarkdown();
-      for k, v in pairs(settings) do LMD.config[k] = v end;
-      return LMD;
+      if not settings then return end
+      local LMD = self:GetLibSimpleHTMLMarkdown()
+      for k, v in pairs(settings) do LMD.config[k] = v end
+      return LMD
     end,
 
   ["SetFontStepFromFontObject"] = 
     function(self, font1, font2)
-      if    not font2 then font1 = "GameFontNormal"; font2 = font1 end;
-      if    type(font1) == "string" then font1 = _G[font1] end;
-      if    type(font2) == "string" then font2 = _G[font2] end;
-      local _, fontSize1, _ = font1:GetFont();
-      local _, fontSize2, _ = font2:GetFont();
-      self.step = math.abs( fontSize2 - fontSize1 );
-      return self;
+      if    not font2 then font1 = "GameFontNormal" font2 = font1 end
+      if    type(font1) == "string" then font1 = _G[font1] end
+      if    type(font2) == "string" then font2 = _G[font2] end
+      local _, fontSize1, _ = font1:GetFont()
+      local _, fontSize2, _ = font2:GetFont()
+      self.step = math.abs( fontSize2 - fontSize1 )
+      return self
     end,
 
   ["RegisterHtmlStyle"] =
@@ -458,54 +458,54 @@ local widgetMethods =
       if not styleData 
       then   styleData = self.HtmlStyles.default 
       elseif type(styleData) == "string" and self.HtmlStyles[styleData]
-      then   styleData = self.HtmlStyles[styleData];
-      end;
-      if type(styleData) == "table" then style = CopyTable(styleData); else style = {}; end;
-      style.name = styleName;
-      style.widget = self;
-      for method, func in pairs(htmlStyleMethods) do style[method] = func end;
-      self.HtmlStyles = self.HtmlStyles or {};
-      self.HtmlStyles[styleName] = style;
-      return style;
+      then   styleData = self.HtmlStyles[styleData]
+      end
+      if type(styleData) == "table" then style = CopyTable(styleData) else style = {} end
+      style.name = styleName
+      style.widget = self
+      for method, func in pairs(htmlStyleMethods) do style[method] = func end
+      self.HtmlStyles = self.HtmlStyles or {}
+      self.HtmlStyles[styleName] = style
+      return style
     end,
 
   ["CreateHtmlStyleFromFontObject"] =
     function(self, fontObject, styleName)
-      fontObject = fontObject or "GameFontNormal";
-      if type(fontObject) == "string" then fontObject = _G[fontObject] end;
-      if not styleName then styleName = fontObject:GetName(); end;
-      local style = {};
-      style.red, style.green, style.blue              = fontObject:GetTextColor();
-      style.FontFile, style.FontSize, style.FontFlags = fontObject:GetFont();
-      style.JustifyH                                  = fontObject:GetJustifyH();
-      style.JustifyV                                  = fontObject:GetJustifyV();
-      style.Spacing                                   = fontObject:GetSpacing();
+      fontObject = fontObject or "GameFontNormal"
+      if type(fontObject) == "string" then fontObject = _G[fontObject] end
+      if not styleName then styleName = fontObject:GetName() end
+      local style = {}
+      style.red, style.green, style.blue              = fontObject:GetTextColor()
+      style.FontFile, style.FontSize, style.FontFlags = fontObject:GetFont()
+      style.JustifyH                                  = fontObject:GetJustifyH()
+      style.JustifyV                                  = fontObject:GetJustifyV()
+      style.Spacing                                   = fontObject:GetSpacing()
 
-      return self:RegisterHtmlStyle(styleName, style);
+      return self:RegisterHtmlStyle(styleName, style)
     end,
 
   ["ApplyHtmlStyle"] = 
     function(self, tag, style)
-      tag = tag or "p";
+      tag = tag or "p"
       if   type(style) == "string" and self.HtmlStyles[style]
-      then style = self.HtmlStyles[style];
-      end;
-      self.html:SetFont(tag, unpack({ style:GetFont() }) );
-      self.html:SetTextColor(tag, style:GetTextColorRed(), style:GetTextColorGreen(), style:GetTextColorBlue());
-      self.html:SetSpacing(tag,   style:GetSpacing() );
-      self.html:SetJustifyH(tag,  style:GetJustifyH() );
-      self.html:SetJustifyV(tag,  style:GetJustifyV() );
-      self.html[tag] = style:GetName();
-      return self;
+      then style = self.HtmlStyles[style]
+      end
+      self.html:SetFont(tag, unpack({ style:GetFont() }) )
+      self.html:SetTextColor(tag, style:GetTextColorRed(), style:GetTextColorGreen(), style:GetTextColorBlue())
+      self.html:SetSpacing(tag,   style:GetSpacing() )
+      self.html:SetJustifyH(tag,  style:GetJustifyH() )
+      self.html:SetJustifyV(tag,  style:GetJustifyV() )
+      self.html[tag] = style:GetName()
+      return self
     end,
 
   ["GetHtmlStyleByTag"] =
     function(self, tag)
-      tag = tag or "p";
+      tag = tag or "p"
       if   self.html[tag]
       then return self:GetHtmlStyle(self.html[tag])
-      else return nil;
-      end;
+      else return nil
+      end
     end,
 
   ["ApplyConfiguration"] = 
@@ -513,65 +513,65 @@ local widgetMethods =
 
       for k, v in pairs(config.LinkProtocols)      
       do  local protocol = self:RegisterLinkProtocol(k)
-          _ = v.Cursor      and protocol:SetCursor(     v.Cursor);
-          _ = v.MouseOver   and protocol:SetMouseOver(  v.MouseOver);
-          _ = v.CustomClick and protocol:SetCustomClick(v.CustomClick);
-          _ = v.Popup       and protocol:SetPopup(v.Popup.Text, v.Popup.ButtonText, v.Popup.PrefixText); 
-      end ;
+          _ = v.Cursor      and protocol:SetCursor(     v.Cursor)
+          _ = v.MouseOver   and protocol:SetMouseOver(  v.MouseOver)
+          _ = v.CustomClick and protocol:SetCustomClick(v.CustomClick)
+          _ = v.Popup       and protocol:SetPopup(v.Popup.Text, v.Popup.ButtonText, v.Popup.PrefixText) 
+      end
 
-      for k, v    in pairs(config.HtmlStyles)         do self:RegisterHtmlStyle(k, v);                   end ;
-      for _, item in pairs(config.ImportedHtmlStyles) do self:CreateHtmlStyleFromFontObject(item, item); end ;
-      for k, v    in pairs(config.HtmlTagStyles)      do self:ApplyHtmlStyle(k, v)                       end ;
+      for k, v    in pairs(config.HtmlStyles)         do self:RegisterHtmlStyle(k, v)                   end
+      for _, item in pairs(config.ImportedHtmlStyles) do self:CreateHtmlStyleFromFontObject(item, item) end
+      for k, v    in pairs(config.HtmlTagStyles)      do self:ApplyHtmlStyle(k, v)                       end
 
-      self:EnableHyperlinks(          config.EnableHyperlinks   );
-      self:SetHyperlinkFormat(        config.HyperlinkFormat    );
-      self:SetClickHandler(           config.ClickHandler       );
-      self:SetMouseOverHandler(       config.MouseOverHandler   );
-      self:SetFontStepFromFontObject( config.LargeFont          );
-      self:SetLibSimpleHTMLMarkdownConfig(      config.LibSimpleHTMLMarkdownConfig );
+      self:EnableHyperlinks(          config.EnableHyperlinks   )
+      self:SetHyperlinkFormat(        config.HyperlinkFormat    )
+      self:SetClickHandler(           config.ClickHandler       )
+      self:SetMouseOverHandler(       config.MouseOverHandler   )
+      self:SetFontStepFromFontObject( config.LargeFont          )
+      self:SetLibSimpleHTMLMarkdownConfig(      config.LibSimpleHTMLMarkdownConfig )
 
     end,
 
  ["SetWidth"] =
    function(self, width)
-     self.frame:SetWidth(width);
-     self.html:SetWidth(width - 25);
-     self.html:SetText(self.html.Html);
-     self.frame:SetHeight( self.html:GetContentHeight() );
+     self.frame:SetWidth(width)
+     self.html:SetWidth(width - 25)
+     self.html:SetText(self.html.Html)
+     self.frame:SetHeight( self.html:GetContentHeight() )
    end,
 
  ["SetFont"] =
    function(self, font)
-     self:GetHtmlStyle("Normal"):SetFont(font):ApplyHtmlStyle("p", "Normal");
+     self:GetHtmlStyle("Normal"):SetFont(font):ApplyHtmlStyle("p", "Normal")
    end,
 
  ["SetFontObject"] =
    function(self, fontObject)
-     local file, size, flags = fontObject:GetFont();
+     local file, size, flags = fontObject:GetFont()
      for _, tag in ipairs({ "h1", "h2", "h3", "p" })
-     do  local style = self.html[tag];
-         self:GetHtmlStyle(style):SetFontFile(file):SetFontSize(size):SetFontFlags(flags); 
-         self:ApplyHtmlStyle(tag, style);
-    end;
+     do  local style = self.html[tag]
+         self:GetHtmlStyle(style):SetFontFile(file):SetFontSize(size):SetFontFlags(flags) 
+         self:ApplyHtmlStyle(tag, style)
+    end
    end,
 
  ["SetJustifyH"] =
    function(self, justifyH)
-     self:GetHtmlStyle("Normal"):SetJustifyH(justifyH):ApplyHtmlStyle("p", "Normal");
+     self:GetHtmlStyle("Normal"):SetJustifyH(justifyH):ApplyHtmlStyle("p", "Normal")
    end,
 
  ["SetJustifyV"] =
    function(self, justifyV)
-     self:GetHtmlStyle("Normal"):SetJustifyV(justifyV):ApplyHtmlStyle("p", "Normal");
+     self:GetHtmlStyle("Normal"):SetJustifyV(justifyV):ApplyHtmlStyle("p", "Normal")
    end,
 
  ["SetColor"] =
    function(self, r, g, b)
      if   not (r and g and b)
-     then r, g, b = 1, 1, 1;
-     end;
+     then r, g, b = 1, 1, 1
+     end
 
-     self:ApplyHtmlStyle("p", self:GetHtmlStyleByTag():SetTextColor(r, g, b));
+     self:ApplyHtmlStyle("p", self:GetHtmlStyleByTag():SetTextColor(r, g, b))
    end,
       
  ["SetTextColor"] =
@@ -579,25 +579,25 @@ local widgetMethods =
      tag, r, g, b = extra and r or nil, 
                     extra and g or r, 
                     extra and b or g, 
-                    extra       or b;
-     -- if extra then tag, r, g, b = r, g, b, extra end;
-     if not (r and g and b) then r, g, b = 1, 1, 1; end;
+                    extra       or b
+     -- if extra then tag, r, g, b = r, g, b, extra end
+     if not (r and g and b) then r, g, b = 1, 1, 1 end
 
-     style = self:GetHtmlStyleByTag(tag);
+     style = self:GetHtmlStyleByTag(tag)
 
      if   style
-     then self:ApplyHtmlStyle(tag, style:SetTextColor(r, g, b));
-     else self:ApplyHtmlStyle("p", self:GetHtmlStyleByTag():SetTextColor(r, g, b));
-     end;
+     then self:ApplyHtmlStyle(tag, style:SetTextColor(r, g, b))
+     else self:ApplyHtmlStyle("p", self:GetHtmlStyleByTag():SetTextColor(r, g, b))
+     end
    end,
 
  ["OnAcquire"] = 
    function(self)
-     self:ApplyConfiguration(_G["LIBSIMPLEHTMLMARKDOWN_WIDGET_CONFIG"]);
-     self:SetWidth(200);
-     self:SetText();
+     self:ApplyConfiguration(_G["LIBSIMPLEHTMLMARKDOWN_WIDGET_CONFIG"])
+     self:SetWidth(200)
+     self:SetText()
   end,
-};
+}
 
 --   ____                _                   _             
 --  / ___|___  _ __  ___| |_ _ __ _   _  ___| |_ ___  _ __ 
@@ -606,26 +606,26 @@ local widgetMethods =
 --  \____\___/|_| |_|___/\__|_|   \__,_|\___|\__\___/|_|   
 --                                                         
 local function Constructor()
-  local frame = CreateFrame("Frame", nil, UIParent);
-  frame:Hide();
+  local frame = CreateFrame("Frame", nil, UIParent)
+  frame:Hide()
 
-  local html = CreateFrame("SimpleHTML", nil, UIParent);
+  local html = CreateFrame("SimpleHTML", nil, UIParent)
 
   for script, func in pairs(htmlFrameHandlers)
-  do html:SetScript(script, func);
-  end;
+  do html:SetScript(script, func)
+  end
 
   local widget = 
   { type       = widget_type,
     frame      = html,
     html       = html,
-  };
+  }
 
-  html.widget = widget;
+  html.widget = widget
 
-  for method, func in pairs(widgetMethods) do widget[method] = func; end;
-  return AceGUI:RegisterAsWidget(widget);
-end; -- constructor
+  for method, func in pairs(widgetMethods) do widget[method] = func end
+  return AceGUI:RegisterAsWidget(widget)
+end -- constructor
 
-AceGUI:RegisterWidgetType(widget_type, Constructor, widget_version);
+AceGUI:RegisterWidgetType(widget_type, Constructor, widget_version)
 

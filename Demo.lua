@@ -1,6 +1,6 @@
 -- Create our library object.
 --
-local LMD = LibStub("LibSimpleHTMLMarkdown-1.0");
+local LMD = LibStub("LibSimpleHTMLMarkdown-1.0")
 
 -- Here's the sample markdown text we'll use. 
 -- Note: [====[ ... ]====] is the same as a quoted string in lua, as 
@@ -27,8 +27,8 @@ This is a `SimpleHTML` frame. {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8}
  * You can press &quot;ESC&quot; to close this window.
  + Or you can use [this link](window:close) to close it.
 ^
-    local LMD = LibStub("LibSimpleHTMLMarkdown-1.0");
-    print("This is a code block.");
+    local LMD = LibStub("LibSimpleHTMLMarkdown-1.0")
+    print("This is a code block.")
 
 > This is a blockquote.
 >
@@ -49,34 +49,34 @@ This is a `SimpleHTML` frame. {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8}
 as <strong>the &lt;strong&gt; tag</strong> (<-- see, this wasn't displayed), 
 even if they're valid HTML.</p>
 
-]==============];
+]==============]
 
--- ]==============]; local more_text = [==============[
-local frame = _G["LSHMDemoFrame"] or CreateFrame("Frame", "LSHMDemoFrame", UIParent, "SimplePanelTemplate");
-frame.html  = frame.html or CreateFrame("SimpleHTML", "LSHMDemoFrameSimpleHTML", frame);
+-- ]==============] local more_text = [==============[
+local frame = _G["LSHMDemoFrame"] or CreateFrame("Frame", "LSHMDemoFrame", UIParent, "SimplePanelTemplate")
+frame.html  = frame.html or CreateFrame("SimpleHTML", "LSHMDemoFrameSimpleHTML", frame)
 
-frame:SetSize(640,600);
-frame:SetPoint("CENTER", UIParent, "CENTER", 30, 30);
-frame.html:SetSize(600, 540);
-frame.html:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -30);
+frame:SetSize(640,600)
+frame:SetPoint("CENTER", UIParent, "CENTER", 30, 30)
+frame.html:SetSize(600, 540)
+frame.html:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -30)
 
 -- Some font definitions.
 -- Look here for font objects: https://www.townlong-yak.com/framexml/live/FontStyles.xml
 --
-frame.html:SetFontObject("h1", "SubzoneTextFont");
-frame.html:SetTextColor("h1", 0, 0.6, 1, 1);
+frame.html:SetFontObject("h1", "SubzoneTextFont")
+frame.html:SetTextColor("h1", 0, 0.6, 1, 1)
 
-frame.html:SetFontObject("h2", "Fancy22Font");
-frame.html:SetTextColor("h2", 0, 1, 0, 1);
+frame.html:SetFontObject("h2", "Fancy22Font")
+frame.html:SetTextColor("h2", 0, 1, 0, 1)
 
-frame.html:SetFontObject("h3", "NumberFontNormalLarge");
-frame.html:SetTextColor("h3", 0, 0.8, 0.4, 1);
+frame.html:SetFontObject("h3", "NumberFontNormalLarge")
+frame.html:SetTextColor("h3", 0, 0.8, 0.4, 1)
 
-frame.html:SetFontObject("p", "GameFontNormal");
-frame.html:SetTextColor("p", 1, 1, 1, 1);
+frame.html:SetFontObject("p", "GameFontNormal")
+frame.html:SetTextColor("p", 1, 1, 1, 1)
 
-frame.html:SetHyperlinkFormat("[|cff3399ff|H%s|h%s|h|r]");
-tinsert(UISpecialFrames, "LSHMDemoFrame");
+frame.html:SetHyperlinkFormat("[|cff3399ff|H%s|h%s|h|r]")
+tinsert(UISpecialFrames, "LSHMDemoFrame")
 
 -- This is a minimal hyperlink handler...
 --
@@ -85,22 +85,22 @@ frame.html:SetScript("OnHyperlinkClick",
     if     link=="window:close" 
     then   f:GetParent():Hide() 
     elseif link:match("https?://")
-    then   StaticPopup_Show("LIBSIMPLEHTMLMARKDOWNDEMOFRAME_URL", nil, nil, { title = text, url = link });
+    then   StaticPopup_Show("LIBSIMPLEHTMLMARKDOWNDEMOFRAME_URL", nil, nil, { title = text, url = link })
     end 
-  end);
+  end)
 
-frame.html:SetScript("OnHyperlinkEnter", function(f) f:SetCursor("Interface\\CURSOR\\vehichleCursor.PNG") end);
-frame.html:SetScript("OnHyperlinkLeave", function(f) f:SetCursor()                                        end);
+frame.html:SetScript("OnHyperlinkEnter", function(f) f:SetCursor("Interface\\CURSOR\\vehichleCursor.PNG") end)
+frame.html:SetScript("OnHyperlinkLeave", function(f) f:SetCursor()                                        end)
 
 -- ... and this is the popup it opens.
 --
 StaticPopupDialogs["LIBSIMPLEHTMLMARKDOWNDEMOFRAME_URL"] = 
 { OnShow = 
     function(self, data)
-      self.text:SetFormattedText("Here's a link to " .. data.title);
-      self.editBox:SetText(data.url);
-      self.editBox:SetAutoFocus(true);
-      self.editBox:HighlightText();
+      self.text:SetFormattedText("Here's a link to " .. data.title)
+      self.editBox:SetText(data.url)
+      self.editBox:SetAutoFocus(true)
+      self.editBox:HighlightText()
     end,
   text         = "",
   wide         = true,
@@ -112,12 +112,12 @@ StaticPopupDialogs["LIBSIMPLEHTMLMARKDOWNDEMOFRAME_URL"] =
   OnAccept               = function(self) self:Hide() end,
   EditBoxOnEnterPressed  = function(self) self:Hide() end,
   EditBoxOnEscapePressed = function(self) self:Hide() end 
-};
+}
 
 frame:SetScript("OnShow", 
   function(self)
-    self.html:SetText(LMD:ToHTML(text)); 
-    print(LMD:ToHTML(text)); 
-  end);
+    self.html:SetText(LMD:ToHTML(text)) 
+    print(LMD:ToHTML(text)) 
+  end)
 
-print("[|cff00ddddLibSimpleHTMLMarkdown|r] demo loaded. Type |cff00dddd/script LSHMDemoFrame:Show()|r to see it.");
+print("[|cff00ddddLibSimpleHTMLMarkdown|r] demo loaded. Type |cff00dddd/script LSHMDemoFrame:Show()|r to see it.")
