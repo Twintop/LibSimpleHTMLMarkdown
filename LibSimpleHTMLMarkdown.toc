@@ -2,7 +2,7 @@
 ## Title: Lib: SimpleHTMLMarkdown
 ## Notes: Converts markdown to HTML for SimpleHTML frames
 ## Author: Twintop
-## Version: 1.1
+## Version: 1.0.1
 ## X-Category: Library
 ## X-License: MIT
 ## X-Website: https://github.com/Twintop/LibSimpleHTMLMarkdown
