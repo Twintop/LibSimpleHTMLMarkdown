@@ -1,10 +1,13 @@
 ## Interface: 120105, 50504, 40402, 38002, 30405, 20506, 16001, 11509
 ## Title: Lib: SimpleHTMLMarkdown
 ## Notes: Converts markdown to HTML for SimpleHTML frames
-## Author: Twintop; originally Oraibi-MoonGuard
-## Version: @project-version@
+## Author: Twintop
+## Version: 1.1
 ## X-Category: Library
 ## X-License: MIT
+## X-Website: https://github.com/Twintop/LibSimpleHTMLMarkdown
+## X-Curse-Project-ID: 1780888
+## X-Wago-ID: b6Xy9OKp
 
 LibStub\LibStub.lua
 LibSimpleHTMLMarkdown.xml
