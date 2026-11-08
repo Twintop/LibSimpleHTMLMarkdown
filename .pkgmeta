@@ -1,0 +1,16 @@
+# BigWigs packager metadata. .github/workflows/release.yml runs the packager on each release tag; it reads the
+# CurseForge and Wago ids from the TOC. The workflow cuts CHANGELOG.md down to the tag's section before packaging,
+# so each upload's changelog lists only that release. CHANGELOG.md is read from the repository root and never
+# shipped in the zip.
+package-as: LibSimpleHTMLMarkdown
+
+manual-changelog:
+    filename: CHANGELOG.md
+    markup-type: markdown
+
+ignore:
+    - CHANGELOG.md
+    - .github
+    - .vscode
+    - .gitignore
+    - .pkgmeta

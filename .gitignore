@@ -14,5 +14,4 @@ docs/*
 .claude/*
 CLAUDE.md
 /.release/*
-/CHANGELOG.md
 .gitattributes
