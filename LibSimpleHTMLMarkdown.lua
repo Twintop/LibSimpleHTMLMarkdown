@@ -3,7 +3,7 @@
 -- lua implementation of markdown originally from https://github.com/mpeterv/markdown
 
 local  MARKDOWN10 = "LibSimpleHTMLMarkdown-1.0"
-local  MARKDOWN10_MINOR = 1
+local  MARKDOWN10_MINOR = 2
 if not LibStub then error(MARKDOWN10 .. " requires LibStub.") end
 local  LibMarkdown = LibStub:NewLibrary(MARKDOWN10, MARKDOWN10_MINOR)
 if not LibMarkdown then return end
@@ -78,10 +78,10 @@ LibMarkdown.rt_list = {
 -- returns the result of mapping the values in table t through the function f
 function LibMarkdown.map(t, f, self)
    local out = {}
-   for k,v in pairs(t) 
-   do if   self 
-      then out[k] = f(self, v, k) 
-      else out[k] = f(k, v)
+   for k,v in pairs(t)
+   do if   self
+      then out[k] = f(self, v, k)
+      else out[k] = f(v, k)
       end
    end
    return out
@@ -315,8 +315,8 @@ function LibMarkdown.protect_matches(self, text, patterns)
    return text
 end
 
--- protects blocklevel tags in the specified text
-function LibMarkdown.protect(self, text)
+-- protects blocklevel tags in a run of text that has no code fences
+function LibMarkdown.protect_html(self, text)
    -- first protect potentially nested block tags
    text = self:protect_matches(text, LibMarkdown.map(self.pd.tags, self.block_pattern))
    -- then protect block tags at the line level.
@@ -325,6 +325,31 @@ function LibMarkdown.protect(self, text)
    text = self:protect_matches(text, {"\n<hr[^>]->[ \t]*\n"})
    text = self:protect_matches(text, {"\n<!%-%-.-%-%->[ \t]*\n"})
    return text
+end
+
+-- protects blocklevel tags in the specified text. html inside ``` fences is code, so each
+-- run of lines between fences is protected on its own and the fenced lines are left alone.
+function LibMarkdown.protect(self, text)
+   local out, run, fenced = {}, {}, false
+   local function flush()
+      if #run > 0 then
+         -- the block patterns need a newline before and after each block
+         local s = self:protect_html("\n" .. table.concat(run, "\n") .. "\n")
+         table.insert(out, s:sub(2, -2))
+         run = {}
+      end
+   end
+   for _, line in ipairs(LibMarkdown.split(text)) do
+      if fenced or line:match("^```") then
+         flush()
+         table.insert(out, line)
+         if line:match("^```") then fenced = not fenced end
+      else
+         table.insert(run, line)
+      end
+   end
+   flush()
+   return table.concat(out, "\n")
 end
 
 -- returns true if the string s is a hash resulting from protection
@@ -462,6 +487,17 @@ function LibMarkdown.classify(self, line)
    return info
 end
 
+-- classifies each line in order. classify tracks code fences in self.inACodeblock, and
+-- self is the library object every AddOn shares, so each pass starts with no fence open
+-- and clears it after: an unclosed ``` can't turn the next document into a code block.
+function LibMarkdown.classify_lines(self, lines)
+   local out = {}
+   self.inACodeblock = false
+   for i, line in ipairs(lines) do out[i] = self:classify(line) end
+   self.inACodeblock = false
+   return out
+end
+
 -- find headers constisting of a normal line followed by a ruler and converts them to
 -- header entries.
 function LibMarkdown.headers(self, array)
@@ -571,7 +607,7 @@ function LibMarkdown.lists(self, array, sublist)
             return format_item(number, itemtext)
          else
             local lines = LibMarkdown.split(itemtext)
-            lines = LibMarkdown.map(lines, self.classify, self)
+            lines = self:classify_lines(lines)
             lines = self:lists(lines, true)
             lines = self:blocks_to_html(lines, true)
             itemtext = table.concat(lines, "\n")
@@ -772,7 +808,7 @@ end
 -- perform all the block level transforms
 function LibMarkdown.block_transform(self, text, sublist)
    local lines = LibMarkdown.split(text)
-   lines = LibMarkdown.map(lines, self.classify, self)
+   lines = self:classify_lines(lines)
    lines = self:headers(lines)
    lines = self:lists(lines, sublist)
    lines = self:codeblocks(lines)
@@ -785,14 +821,91 @@ function LibMarkdown.block_transform(self, text, sublist)
 end
 
 function LibMarkdown.last_minute_lmd_fixes(text) --
-   text = text:gsub("([^<>\n]+)(<img.->)","<p>%1</p>\n%2")
-   text = text:gsub("(<img.->)([^<>]+)","%1<p>%2</p>")
-   text = text:gsub("<p>(<img.->)</p>", "%1")
+   text = text:gsub("([^<>\n]+)(<img[^>]*>)","<p>%1</p>\n%2")
+   text = text:gsub("(<img[^>]*>)([^<>]+)","%1<p>%2</p>")
+   text = text:gsub("<p>(<img[^>]*>)</p>", "%1")
    text = text:gsub("<p([^>]*)>%s*<p>(.-)</p>%s*</p>", "<p%1>%2</p>")
    text = text:gsub("<p[^>]*>%s*</p>", "")
    text = text:gsub("<br />%s*<br />", "<br />")
-      
+
    return text
+end
+
+LibMarkdown.flow_blocks = { p = true, h1 = true, h2 = true, h3 = true }
+LibMarkdown.void_blocks = { img = true, hr = true }
+
+-- SimpleHTML lays out a flat run of blocks: <p> and <h1>-<h3> can't hold another block,
+-- and <img> and <hr> can't sit inside one. Loose lists, code in list items, and headings
+-- in blockquotes nest them, so flatten the html:
+--   * a <p> opened inside a block that already has text merges into it, and its close
+--     becomes a line break, so a loose list item stays on its marker's line;
+--   * any other nested block closes the open one, and the open one reopens after it.
+-- A block close that doesn't match the open block is dropped, and blocks still open at the
+-- end are closed, since SimpleHTML shows a whole document as raw text if it's malformed.
+function LibMarkdown.flatten_blocks(text)
+   local out, stack, pos = {}, {}, 1
+
+   -- the innermost block whose tags are actually in the output
+   local function enclosing()
+      for i = #stack, 1, -1 do
+         if not stack[i].merged then return stack[i] end
+      end
+   end
+
+   local function reopen(block)
+      if block then
+         table.insert(out, block.open)
+         block.has_text = false
+      end
+   end
+
+   while pos <= #text do
+      local lt = text:find("<", pos, true)
+      local chunk = text:sub(pos, (lt or #text + 1) - 1)
+      if chunk ~= "" then
+         table.insert(out, chunk)
+         local block = enclosing()
+         if block and chunk:find("%S") then block.has_text = true end
+      end
+      if not lt then break end
+
+      local stop = LibMarkdown.tag_end(text, lt) or lt
+      local tag = text:sub(lt, stop)
+      local closing, name = tag:match("^<(/?)(%a%w*)")
+      local key = name and name:lower()
+      local block = enclosing()
+      pos = stop + 1
+
+      if key and LibMarkdown.flow_blocks[key] and closing == "" and not tag:find("/>$") then
+         if block and key == "p" and block.has_text then
+            table.insert(stack, { name = name, merged = true })
+         else
+            if block then table.insert(out, "</" .. block.name .. ">") end
+            table.insert(out, tag)
+            table.insert(stack, { name = name, open = tag, has_text = false })
+         end
+      elseif key and LibMarkdown.flow_blocks[key] and closing == "/" then
+         if #stack > 0 and stack[#stack].name:lower() == key then
+            local top = table.remove(stack)
+            if top.merged then
+               table.insert(out, "<br />")
+            else
+               table.insert(out, tag)
+               reopen(enclosing())
+            end
+         end
+      elseif key and LibMarkdown.void_blocks[key] and closing == "" and block then
+         table.insert(out, "</" .. block.name .. ">")
+         table.insert(out, tag)
+         reopen(block)
+      else
+         table.insert(out, tag)
+         if block and key and key ~= "br" then block.has_text = true end
+      end
+   end
+   local block = enclosing()
+   if block then table.insert(out, "</" .. block.name .. ">") end
+   return table.concat(out)
 end
 
 ----------------------------------------------------------------------
@@ -1024,27 +1137,68 @@ function LibMarkdown.auto_links(self, text)
    return text
 end
 
+-- returns the position of the ">" that ends the tag or comment starting at the "<" at
+-- pos, or nil if that "<" doesn't start one SimpleHTML could parse. SimpleHTML shows a
+-- whole document as raw text when any of it is malformed, and it needs quoted attributes.
+function LibMarkdown.tag_end(s, pos)
+   if s:sub(pos, pos + 3) == "<!--" then
+      local _, stop = s:find("-->", pos + 4, true)
+      return stop
+   end
+   local _, stop = s:find("^</%a%w*%s*>", pos)
+   if stop then return stop end
+   _, stop = s:find("^<%a%w*", pos)
+   if not stop then return nil end
+   local i = stop + 1
+   while true do
+      local _, close = s:find("^%s*/?>", i)
+      if close then return close end
+      local _, eq = s:find("^%s+[%a_:][%w_:%.%-]*%s*=%s*", i)
+      if not eq then return nil end
+      local quote = s:sub(eq + 1, eq + 1)
+      if quote ~= '"' and quote ~= "'" then return nil end
+      local endquote = s:find(quote, eq + 2, true)
+      if not endquote then return nil end
+      i = endquote + 1
+   end
+end
+
+-- encodes every "<" that doesn't start a tag or comment (e.g. "x<y", "<3").
+function LibMarkdown.escape_naked_angles(s)
+   local out, pos = {}, 1
+   while true do
+      local lt = s:find("<", pos, true)
+      if not lt then break end
+      table.insert(out, s:sub(pos, lt - 1))
+      local stop = LibMarkdown.tag_end(s, lt)
+      if stop then
+         table.insert(out, s:sub(lt, stop))
+         pos = stop + 1
+      else
+         table.insert(out, "&lt;")
+         pos = lt + 1
+      end
+   end
+   table.insert(out, s:sub(pos))
+   return table.concat(out)
+end
+
 -- encode free standing amps (&) and angles (<)... note that this does not
 -- encode free >.
 function LibMarkdown.amps_and_angles(self, s)
-   -- encode amps not part of &..; expression
+   -- encode amps that don't start a &name; &#123; or &#x7B; reference
    local pos = 1
    while true do
-      local amp = s:find("&", pos)
+      local amp = s:find("&", pos, true)
       if not amp then break end
-      local semi = s:find(";", amp+1)
-      local stop = s:find("[^%a%d]", amp+1)
-      if not semi or (stop and stop < semi) or (semi - amp) > 15 then
-         s = s:sub(1,amp-1) .. "&amp;" .. s:sub(amp+1)
-         pos = amp+1
-      else
-         pos = amp+1
+      if not (s:find("^&%a%w*;", amp) or s:find("^&#%d+;", amp) or s:find("^&#[xX]%x+;", amp)) then
+         s = s:sub(1, amp - 1) .. "&amp;" .. s:sub(amp + 1)
       end
+      pos = amp + 1
    end
 
    -- encode naked <'s
-   s = s:gsub("<([^a-za-z/?$!])", "&lt;%1")
-   s = s:gsub("<$", "&lt;")
+   s = LibMarkdown.escape_naked_angles(s)
 
    -- what about >, nothing done in the original markdown source to handle them
    return s
@@ -1065,6 +1219,50 @@ function LibMarkdown.emphasis(self, text)
    return text
 end
 
+-- SimpleHTML decodes only &amp; &lt; &gt; and &quot;, so other character references are
+-- decoded to UTF-8 here. Latin-1 runs from U+00A0 to U+00FF in this order.
+LibMarkdown.latin1_entities = {
+   "nbsp", "iexcl", "cent", "pound", "curren", "yen", "brvbar", "sect", "uml", "copy", "ordf", "laquo",
+   "not", "shy", "reg", "macr", "deg", "plusmn", "sup2", "sup3", "acute", "micro", "para", "middot",
+   "cedil", "sup1", "ordm", "raquo", "frac14", "frac12", "frac34", "iquest",
+   "Agrave", "Aacute", "Acirc", "Atilde", "Auml", "Aring", "AElig", "Ccedil", "Egrave", "Eacute", "Ecirc", "Euml",
+   "Igrave", "Iacute", "Icirc", "Iuml", "ETH", "Ntilde", "Ograve", "Oacute", "Ocirc", "Otilde", "Ouml", "times",
+   "Oslash", "Ugrave", "Uacute", "Ucirc", "Uuml", "Yacute", "THORN", "szlig",
+   "agrave", "aacute", "acirc", "atilde", "auml", "aring", "aelig", "ccedil", "egrave", "eacute", "ecirc", "euml",
+   "igrave", "iacute", "icirc", "iuml", "eth", "ntilde", "ograve", "oacute", "ocirc", "otilde", "ouml", "divide",
+   "oslash", "ugrave", "uacute", "ucirc", "uuml", "yacute", "thorn", "yuml",
+}
+
+LibMarkdown.named_entities = {
+   apos   = 0x0027, OElig  = 0x0152, oelig  = 0x0153, Scaron = 0x0160, scaron = 0x0161, Yuml   = 0x0178,
+   fnof   = 0x0192, circ   = 0x02C6, tilde  = 0x02DC, ndash  = 0x2013, mdash  = 0x2014, lsquo  = 0x2018,
+   rsquo  = 0x2019, sbquo  = 0x201A, ldquo  = 0x201C, rdquo  = 0x201D, bdquo  = 0x201E, dagger = 0x2020,
+   Dagger = 0x2021, bull   = 0x2022, hellip = 0x2026, permil = 0x2030, prime  = 0x2032, Prime  = 0x2033,
+   lsaquo = 0x2039, rsaquo = 0x203A, euro   = 0x20AC, trade  = 0x2122, larr   = 0x2190, uarr   = 0x2191,
+   rarr   = 0x2192, darr   = 0x2193, harr   = 0x2194, minus  = 0x2212, infin  = 0x221E, ne     = 0x2260,
+   le     = 0x2264, ge     = 0x2265, spades = 0x2660, clubs  = 0x2663, hearts = 0x2665, diams  = 0x2666,
+}
+for i, name in ipairs(LibMarkdown.latin1_entities) do LibMarkdown.named_entities[name] = 0x9F + i end
+
+-- characters that are markup to SimpleHTML or WoW (| starts an escape sequence)
+LibMarkdown.entity_markup = { [34] = "&quot;", [38] = "&amp;", [60] = "&lt;", [62] = "&gt;", [124] = "||" }
+
+-- returns the text for code point cp, or nil for one that isn't a valid character.
+function LibMarkdown.entity_char(cp)
+   if not cp or cp < 1 or cp > 0x10FFFF or (cp >= 0xD800 and cp <= 0xDFFF) then return nil end
+   if LibMarkdown.entity_markup[cp] then return LibMarkdown.entity_markup[cp] end
+   local floor = math.floor
+   if cp < 0x80 then
+      return string.char(cp)
+   elseif cp < 0x800 then
+      return string.char(0xC0 + floor(cp / 0x40), 0x80 + cp % 0x40)
+   elseif cp < 0x10000 then
+      return string.char(0xE0 + floor(cp / 0x1000), 0x80 + floor(cp / 0x40) % 0x40, 0x80 + cp % 0x40)
+   end
+   return string.char(0xF0 + floor(cp / 0x40000), 0x80 + floor(cp / 0x1000) % 0x40,
+                      0x80 + floor(cp / 0x40) % 0x40, 0x80 + cp % 0x40)
+end
+
 -- entities and raid targeting icons
 function LibMarkdown.entities(self, text)
    -- LMD: added this
@@ -1081,6 +1279,19 @@ function LibMarkdown.entities(self, text)
           text = text:gsub('{' .. aka:upper() .. '}', self.config[rt])
       end
    end
+
+   text = text:gsub("&#[xX](%x+);", function(hex) return self.entity_char(tonumber(hex, 16)) end)
+   text = text:gsub("&#(%d+);", function(dec) return self.entity_char(tonumber(dec)) end)
+   text = text:gsub("&(%w+);", function(name)
+      local cp = self.named_entities[name]
+      return cp and self.entity_char(cp)
+   end)
+
+   -- any & left over would be an entity SimpleHTML can't parse, so show it literally
+   text = text:gsub("&(%a*;?)", function(rest)
+      if rest == "amp;" or rest == "lt;" or rest == "gt;" or rest == "quot;" then return nil end
+      return "&amp;" .. rest
+   end)
 
    return text
 end
@@ -1155,6 +1366,8 @@ end
 function LibMarkdown.markdown(self, text)
    self:init_hash(text)
    self:init_escape_table()
+   self.pd.blocks = {}
+   self.inACodeblock = false
 
    text = self:cleanup(text)
    text = self:protect(text)
@@ -1162,6 +1375,8 @@ function LibMarkdown.markdown(self, text)
    text = self:block_transform(text)
    text = self:unescape_special_chars(text)
    text = self:entities(text)
+   text = self.escape_naked_angles(text) -- raw html blocks skip the span transforms
+   text = self.flatten_blocks(text)
    text = self.last_minute_lmd_fixes(text) -- LMD: added
    return text
 end

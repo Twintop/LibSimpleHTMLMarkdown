@@ -175,6 +175,10 @@ In addition, the following entities are implemented in LibSimpleHTMLMarkdown:
 &thinsp;  1/5 of the font size; non-breaking.
 ```
 
+Numeric references (`&#169;`, `&#x2014;`) and common named ones (Latin-1 letters and symbols,
+dashes, curly quotes, `&hellip;`, arrows, and so on) are converted to the character itself. Any
+other entity is shown literally. WoW's fonts may not have a glyph for every character.
+
 ### WoW Raid Targeting Icons
 
 You can use these in your markdown:
@@ -264,6 +268,16 @@ LibSimpleHTMLMarkdown 1.0 minor 1 starts from LibMarkdown-1.0 minor 9, the last 
 - Reference links and images no longer index a missing `link_database`.
 - Empty text passed through tab expansion or code encoding returns `""` instead of erroring.
 - Blank lines inside a blockquote put a non-breaking space between their line breaks.
+- An unclosed code fence no longer turns later documents into code blocks. The fence state was
+  kept on the library object, which every AddOn shares.
+- A `<` that doesn't start a tag (`x<y`, `<3`) is escaped. SimpleHTML shows the whole document
+  as raw text when any part of it is malformed.
+- Raw HTML blocks pass through unchanged, as documented, instead of being wrapped in another
+  `<p>`. HTML inside a code fence stays code.
+- Blocks are never nested, since SimpleHTML can't lay them out. Loose list items, code in list
+  items, and headings or images inside another block become a flat run of blocks.
+- Character references SimpleHTML can't parse are decoded (see [HTML Entities](#html-entities)).
+  `&#169;` was shown as `&amp;#169;`, and `&copy;` reached SimpleHTML undecoded.
 - The AceGUI widget only registers when `AceGUI-3.0` is loaded, keeps its library reference
   (it was overwritten with `false`), and its default list marker uses the `list_marker` key
   the library actually reads.
