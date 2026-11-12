@@ -23,7 +23,7 @@ This is a `SimpleHTML` frame. {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8}
 
 ------------------------------------
 
- - This is an unordered list. The bullets are purple.
+ - This is an unordered list.
  * You can press &quot;ESC&quot; to close this window.
  + Or you can use [this link](window:close) to close it.
 ^
@@ -32,8 +32,8 @@ This is a `SimpleHTML` frame. {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8}
 
 > This is a blockquote.
 >
-> Blockquotes are shown with horizontal rules 
-> on the top and the bottom.
+> Blockquotes are shown with a bar
+> at the start of each line.
 
 ```
   <body>

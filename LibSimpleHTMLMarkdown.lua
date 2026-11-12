@@ -53,9 +53,20 @@ LibMarkdown.config = {
   ['/dt'              ] = '|r<br />',
   [ 'dd'              ] = '|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|t',
   ['/dd'              ] = '<br />',
-  -- > [!NOTE] and the other GitHub alerts: the block, then each kind's title line
+  -- > [!NOTE] and the other GitHub alerts: the block, each kind's title line, and each kind's bar,
+  -- which starts each line as blockquote_bar does in a quote
   [ 'admonition'      ] = '<p>',
   ['/admonition'      ] = '</p><br />',
+  ['admonition_note_bar'      ] = '|TInterface\\Buttons\\WHITE8X8:0:0.15:0:0:8:8:0:8:0:8:68:147:248|t' ..
+                                  '|TInterface\\Store\\ServicesAtlas:0:0.5:0:0:1024:1024:1023:1024:1023:1024|t',
+  ['admonition_tip_bar'       ] = '|TInterface\\Buttons\\WHITE8X8:0:0.15:0:0:8:8:0:8:0:8:63:185:80|t' ..
+                                  '|TInterface\\Store\\ServicesAtlas:0:0.5:0:0:1024:1024:1023:1024:1023:1024|t',
+  ['admonition_important_bar' ] = '|TInterface\\Buttons\\WHITE8X8:0:0.15:0:0:8:8:0:8:0:8:171:125:248|t' ..
+                                  '|TInterface\\Store\\ServicesAtlas:0:0.5:0:0:1024:1024:1023:1024:1023:1024|t',
+  ['admonition_warning_bar'   ] = '|TInterface\\Buttons\\WHITE8X8:0:0.15:0:0:8:8:0:8:0:8:210:153:34|t' ..
+                                  '|TInterface\\Store\\ServicesAtlas:0:0.5:0:0:1024:1024:1023:1024:1023:1024|t',
+  ['admonition_caution_bar'   ] = '|TInterface\\Buttons\\WHITE8X8:0:0.15:0:0:8:8:0:8:0:8:248:81:73|t' ..
+                                  '|TInterface\\Store\\ServicesAtlas:0:0.5:0:0:1024:1024:1023:1024:1023:1024|t',
   ['admonition_note'      ] = '|TInterface\\FriendsFrame\\InformationIcon:0|t |cff4493f8Note|r',
   ['admonition_tip'       ] = '|TInterface\\Common\\help-i:0|t |cff3fb950Tip|r',
   ['admonition_important' ] = '|TInterface\\GossipFrame\\AvailableQuestIcon:0|t |cffab7df8Important|r',
@@ -105,10 +116,14 @@ LibMarkdown.config = {
   [ 'code'            ] = '|cff66bbbb',
   ['/code'            ] = '|r',
   ['br'               ] = '<br />',
-  [ 'blockquote'      ] = '<hr width="100"/><p align="center">|cffbbbb00"',
-  ['/blockquote'      ] = '"|r</p><br /><hr width="100"/><br />',
+  -- A blockquote is one block, with a bar at the start of each of its lines (SimpleHTML can't put
+  -- one on a line that wraps). Each quote inside a quote adds its own bar.
+  [ 'blockquote'      ] = '<p>|cffc0c0c0',
+  ['/blockquote'      ] = '|r</p><br />',
+  [ 'blockquote_bar'  ] = '|TInterface\\Buttons\\WHITE8X8:0:0.15:0:0:8:8:0:8:0:8:110:110:110|t' ..
+                          '|TInterface\\Store\\ServicesAtlas:0:0.5:0:0:1024:1024:1023:1024:1023:1024|t',
   [ 'blockquote_quot' ] = '',
-  [ 'blockquote_nested'] = '<br />|cffd8d8a0', -- a quote inside a quote
+  [ 'blockquote_nested'] = '<br />|cffa8a8a8', -- a quote inside a quote
   ['/blockquote_nested'] = '|r<br />',
   [ 'h1'              ] = '<h1>',
   ['/h1'              ] = '</h1><br />',
@@ -1012,11 +1027,23 @@ function LibMarkdown.blockquotes(self, lines)
       bt = bt:gsub("</p>%s*<p[^>]*>", "<br />" .. self.config.nbsp .. "<br />")
       bt = LibMarkdown.strip_paragraph_tags(bt)
 
-      if title then
-         return self.config.admonition .. title .. self.config.br .. bt .. self.config["/admonition"]
+      -- each line starts with the bar. Line breaks that would leave a line with only a bar on it
+      -- (around a list, say) are one break; the empty line between paragraphs has a space in it.
+      local function barred(text, bar)
+         local n
+         repeat text, n = text:gsub("<br%s*/>%s*<br%s*/>", "<br />") until n == 0
+         text = text:gsub("^%s*<br%s*/>", ""):gsub("<br%s*/>%s*$", "")
+         return bar .. text:gsub("<br%s*/>", "<br />" .. bar)
       end
 
-      -- a quote inside a quote is part of the outer one, in its own lines and color
+      if title then
+         local bar = self.config["admonition_" .. kind:lower() .. "_bar"] or self.config.blockquote_bar
+         return self.config.admonition .. barred(title .. self.config.br .. bt, bar) .. self.config["/admonition"]
+      end
+
+      bt = barred(bt, self.config.blockquote_bar)
+      -- a quote inside a quote is part of the outer one, on lines of its own; the outer quote
+      -- adds its bar in front of the inner one's
       if depth > 0 then
          return self.config.blockquote_nested .. bt .. self.config["/blockquote_nested"]
       end

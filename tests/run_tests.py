@@ -31,6 +31,18 @@ sys.path.insert(0, TESTS)
 from probes import PROBES  # noqa: E402
 
 KNOWN_TAGS = {"html", "body", "h1", "h2", "h3", "p", "br", "img", "a", "hr"}
+
+# the default config's spacers and bars, for the assertions
+NBSP = "|TInterface\\Store\\ServicesAtlas:0:0.175:0:0:1024:1024:1023:1024:1023:1024|t"
+
+
+def bar(rgb):
+    """The bar that starts each line of a quote (or an alert, in its kind's color)."""
+    return ("|TInterface\\Buttons\\WHITE8X8:0:0.15:0:0:8:8:0:8:0:8:%s|t"
+            "|TInterface\\Store\\ServicesAtlas:0:0.5:0:0:1024:1024:1023:1024:1023:1024|t" % rgb)
+
+
+QBAR = bar("110:110:110")
 FLOW_BLOCKS = {"p", "h1", "h2", "h3"}
 BLOCKS = FLOW_BLOCKS | {"img", "hr"}
 
@@ -60,7 +72,8 @@ def documents(lua):
         for c, case in enumerate(lua_list(section.cases), 1):
             name = "%02d-%02d-%s" % (s, c, re.sub(r"[^a-z0-9]+", "-", case.name.lower()).strip("-"))
             docs.append(("showcase", name, case.md, case.options))
-    demo = re.search(r"\[(=+)\[\n?(.*?)\]\1\]", read(ROOT, "Demo.lua"), re.S).group(2)
+    # the text assigned to "local text"; a comment above it shows the [====[ ]====] syntax
+    demo = re.search(r"local text = \[(=+)\[\n?(.*?)\]\1\]", read(ROOT, "Demo.lua"), re.S).group(2)
     docs.append(("demo", "demo", demo, None))
     for name, md in PROBES:
         docs.append(("probes", name, md, None))
@@ -163,10 +176,15 @@ ASSERTIONS = [
     ("- a\n- b\n---\n\nafter", ["<hr />", "<p>after</p>"], ["<h2>"]),
     # a setext heading takes every line of its paragraph
     ("one\ntwo\n===", ["<h1>one\ntwo</h1>"], ["<p>one"]),
-    # blockquotes: code, a heading, and a nested quote stay inside the one quote block
-    (">     code", ["|cff66bbbbcode"], []),
-    ("> # Head\n> text", ['|cffbbbb00"|cff00ddddHead|r'], ["<h1>", '"</p>']),
-    ("> outer\n>> inner", ["|cffd8d8a0inner|r"], ['"</p>']),
+    # blockquotes: one left-aligned block with a bar starting each line, without quote marks or rules
+    ("> one\n> two", ["<p>|cffc0c0c0" + QBAR + "one\ntwo|r</p>"], ['align="center"', '"', "<hr"]),
+    # code, a heading, and a nested quote stay inside the one quote block; a nested quote's lines
+    # get the outer bar and their own
+    (">     code", [QBAR + "|cff66bbbbcode"], []),
+    ("> # Head\n> text", [QBAR + "|cff00ddddHead|r<br />" + QBAR], ["<h1>"]),
+    ("> outer\n>> inner", ["<br />" + QBAR + "|cffa8a8a8" + QBAR + "inner|r"], []),
+    # a list in a quote leaves no line with only a bar on it
+    ("> - a\n> - b\n>\n> after", [QBAR + "\n\n\nafter"], [QBAR + "<br />", QBAR + "\n\n<br />"]),
     # letter and Roman numeral lists need two or more items in sequence
     ("A. Lincoln was president.", ["<p>A. Lincoln was president.</p>"], []),
     ("I. M. Pei was an architect.", ["<p>I. M. Pei was an architect.</p>"], []),
@@ -179,12 +197,16 @@ ASSERTIONS = [
     ("## Setup {#setup}\n\n[jump](#setup)", ["<h2>Setup</h2>", '<a href="#setup">jump</a>'], ["{#"]),
     ("Text {#not-a-heading}", ["{#not-a-heading}"], []),
     # GitHub alerts; an unknown kind stays a blockquote
-    ("> [!WARNING]\n> Careful.", ["UI-Dialog-Icon-AlertNew:0|t |cffd29922Warning|r<br />Careful.</p>"], ["[!WARNING]", '"']),
-    ("> [!bogus]\n> x", ['|cffbbbb00"[!bogus]'], []),
+    ("> [!WARNING]\n> Careful.",
+     ["<p>" + bar("210:153:34") + "|TInterface\\DialogFrame\\UI-Dialog-Icon-AlertNew:0|t |cffd29922Warning|r<br />" +
+      bar("210:153:34") + "Careful.</p>"], ["[!WARNING]", QBAR]),
+    ("> [!bogus]\n> x", [QBAR + "[!bogus]"], []),
     # a blank line ends a quote, so each alert is its own block; a > line alone continues one
-    ("> [!NOTE]\n> a\n\n> [!TIP]\n> b", ["|cff4493f8Note|r<br />a</p>", "|cff3fb950Tip|r<br />b</p>"], ["[!TIP]"]),
-    ("> one\n\n> two", ['"one"|r', '"two"|r'], []),
-    ("> one\n>\n> two", ['"one<br />'], ['"two"']),
+    ("> [!NOTE]\n> a\n\n> [!TIP]\n> b",
+     ["|cff4493f8Note|r<br />" + bar("68:147:248") + "a</p>", "|cff3fb950Tip|r<br />" + bar("63:185:80") + "b</p>"],
+     ["[!TIP]"]),
+    ("> one\n\n> two", [QBAR + "one|r</p>", QBAR + "two|r</p>"], []),
+    ("> one\n>\n> two", ["one<br />" + QBAR + NBSP + "<br />" + QBAR + "two|r</p>"], []),
     # definition lists; a ": " line without a term is text
     ("Term\n: One\n: Two", ["|cff00ddddTerm|r<br />", "|tOne<br />", "|tTwo<br />"], ["<p>: "]),
     (": alone", ["<p>: alone</p>"], []),

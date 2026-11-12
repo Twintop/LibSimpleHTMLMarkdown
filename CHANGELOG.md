@@ -31,6 +31,11 @@ Faster:
   document again with the same settings takes no time at all, since recent renders are kept (changing any
   setting renders it again).
 
+Blockquotes look like they do in other renderers: left-aligned gray text with a bar at the start of each line
+(`blockquote_bar`), instead of centered yellow text in quote marks between two rules. A quote inside a quote
+adds its own bar, and alerts have a bar in their kind's color (`admonition_note_bar` and so on). SimpleHTML
+can't put a bar on the wrapped part of a long line.
+
 Also:
 
 - A loose list item's later paragraphs and code start indented under the item's text.

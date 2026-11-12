@@ -144,14 +144,20 @@ LibSimpleHTMLMarkdownShowcase = {
     cases = {
       { name = "Blockquote",
         md = "> These lines\n> join together.\n>\n> A second paragraph.",
-        expect = "A centered, quoted block between rules: one line, an empty line, then the second paragraph." },
+        expect = "Left-aligned gray text with a thin gray bar at the start of each line, empty line included, " ..
+                 "so the bar runs down the quote: one line, an empty line, then the second paragraph." },
+      { name = "Long quote line",
+        md = "> This quote line is long enough to wrap in the frame, to show what happens to the bar " ..
+             "when SimpleHTML wraps a line: it can only start the line, not each wrapped part of it.",
+        expect = "The bar starts the line; the wrapped part starts at the left edge." },
       { name = "Blockquote with a list",
-        md = "> - quoted item\n> - another",
-        expect = "A quote holding a two-item list." },
+        md = "> - quoted item\n> - another\n>\n> After the list.",
+        expect = "A quote holding a two-item list then a line, each line starting with the bar, " ..
+                 "and no line with only a bar on it." },
       { name = "Blockquote with a heading, code, and a quote",
-        md = "> ## Patch notes\n> Fixed a bug.\n>\n>     /reload\n>\n> > Quoted in the quote.",
+        md = "> ## Patch notes\n> Fixed a bug.\n>\n>     /reload\n>\n> > Quoted in the quote.\n>\n> Back in the outer quote.",
         expect = "One quote: the heading as a line in the strong color, the text, /reload in the code color, " ..
-                 "then the inner quote in a paler color. No stray \" on a line of its own." },
+                 "then the inner quote with two bars in a paler color, then a line with one bar again." },
       { name = "Horizontal rules",
         md = "above\n\n---\n\n***\n\n___\n\nbelow",
         expect = "Three rules between \"above\" and \"below\"." },
@@ -195,7 +201,7 @@ LibSimpleHTMLMarkdownShowcase = {
         md = "> [!NOTE]\n> Useful to know.\n\n> [!TIP]\n> Helpful advice.\n\n> [!IMPORTANT]\n> Key information.\n\n" ..
              "> [!WARNING]\n> Needs **attention** now.\n\n> [!CAUTION]\n> Could go wrong.",
         expect = "Five blocks, each with an icon and a colored title (Note, Tip, Important, Warning, Caution), " ..
-                 "then its text. Not centered or in quote marks like a blockquote." },
+                 "then its text, with a bar in that kind's color (blue, green, purple, yellow, red) down its lines." },
       { name = "Definition lists",
         md = "Insanity\n: The resource Shadow Priests build.\n: Spent by Devouring Plague.\nVoidform\n: An older mechanic.",
         expect = "\"Insanity\" in the strong color with two indented definitions under it, then \"Voidform\" with one." },

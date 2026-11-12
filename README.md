@@ -160,6 +160,16 @@ between dim `|` separators and the header row in its own color. A table is cente
 right-aligned when every one of its columns is. Use `\|` for a pipe inside a cell.
 
 ```
+> A blockquote.
+>
+> > A quote inside it.
+```
+
+A blockquote is shown in gray with a bar at the start of each line (`blockquote_bar`), and a
+quote inside a quote adds a second bar. `SimpleHTML` can't put the bar on the wrapped part of a
+long line; `SetIndentedWordWrap` on your frame indents those parts instead.
+
+```
 ~~Strikethrough~~
 https://example.org and www.example.org
 ```
