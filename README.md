@@ -78,11 +78,13 @@ Level 4 headings and above will be converted down to `&lt;h3&gt;`. As in CommonM
 ```
 [Link Name](http://LinkURL)
 
-[Link Name](1)
-[Link Name](2)
+[Link Name][1]
+[Link Name][2]
+[3]
 
 [1]: http://LinkURL
 [2]: mailto:user@example.org
+[3]: http://LinkURL
 ```
 
 Hyperlinks are rendered as you'd expect; however, please note that you need to explicitly
@@ -107,7 +109,7 @@ rudimentary support for lists, presenting them as separate paragraphs with a mar
 before each.
 
 If you have consecutive lists, use a caret (`^`) alone on a line to indicate the
-end of the current list.
+end of the current list. The caret isn't shown.
 
 
 ```
@@ -130,7 +132,8 @@ end of the current list.
 Likewise, LibSimpleHTMLMarkdown will generate pseudo-ordered lists, even though `SimpleHTML`
 doesn't support `&lt;ol&gt;`. As an extension to standard markdown, LibSimpleHTMLMarkdown
 supports letters or Roman numerals for lists. (To distinguish between Roman numeral
-one and a lowercase I, use a square bracket for `i]`.)
+one and a lowercase I, use a square bracket for `i]`.) A letter or Roman numeral list needs
+at least two items in sequence, so a line like "A. Lincoln was president." stays text.
 
 ```
 - Fruit
@@ -163,6 +166,17 @@ https://example.org and www.example.org
 
 `SimpleHTML` can't draw a line through text, so strikethrough is shown dimmed. Bare
 `http://`, `https://`, and `www.` addresses become links, like `<https://example.org>`.
+
+```
+Arcane Blast stacks four times.[^stacks]
+
+[^stacks]: The stacks end 18 seconds after the first cast,
+  or when you cast Arcane Barrage.
+```
+
+A footnote reference shows as a number, `[1]`, numbered in the order the text first refers
+to it. The notes are listed after a rule at the end of the document. A note can go on in
+lines indented under it.
 
 ```
 ![Alt Text](Interface\\ICONS\\ABILITY_SAP.PNG)
@@ -248,7 +262,8 @@ See below under "Configuration", however.
     print("Code blocks can also be created by starting a line with 4 spaces.")
 ```
 
-A `|` in code is shown as itself rather than starting a UI escape sequence.
+Fences can also be `~~~`, or four or more backticks to hold a line of three. A `|` in code
+is shown as itself rather than starting a UI escape sequence.
 
 ## Configuration
 
@@ -281,6 +296,9 @@ local MyMarkdown = LibStub("LibSimpleHTMLMarkdown-1.0"):New(settings);
 
 MyFrame:SetText( MyMarkdown:ToHTML(text) );
 ```
+
+AddOns that do change the shared `config` keep their changes when a newer copy of the library
+loads.
 
 To see what you can change, see the source or type `/script LibStub("LibSimpleHTMLMarkdown-1.0"):ShowConfig()`
 
@@ -353,9 +371,18 @@ LibSimpleHTMLMarkdown 1.0 minor 1 starts from LibMarkdown-1.0 minor 9, the last 
 - Lists nest, list items are numbered from their own lines, and an item's indented paragraphs
   and code stay in the item.
 - Image attributes are written in a fixed order.
+- A footnote definition is no longer read as a link definition, link urls keep balanced
+  parentheses, and image references (`![alt][]`) resolve.
+- Fences close only with the character that opened them, at least as many times.
+- An item's indented rules stay in the item, and an unindented rule or heading ends the list.
+- Setext headings take every line of their paragraph.
+- Blockquotes keep indented code as code, and a heading or quote inside a quote stays in it.
+- Letter and Roman numeral lists need two items in sequence.
+- A newer copy of the library keeps the config changes AddOns made to the older one.
 
 ### Added
 
-- Nested lists, task lists, GFM tables, `~~strikethrough~~`, and bare url links.
+- Nested lists, task lists, GFM tables, `~~strikethrough~~`, bare url links, footnotes, `~~~`
+  fences, shortcut references, and backslash line breaks.
 - `:ToHTML(text, settings)` and `:New(settings)`, so an AddOn's settings don't change the
   shared config.

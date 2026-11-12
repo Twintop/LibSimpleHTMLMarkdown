@@ -25,13 +25,23 @@ LibSimpleHTMLMarkdownShowcase = {
       { name = "Not headings",
         md = "#hashtag is text\n\n#5 is text too",
         expect = "Two plain paragraphs that start with #." },
+      { name = "Setext heading over two lines",
+        md = "A heading that\nwraps in the source\n-------------------",
+        expect = "One Heading 2 holding both lines." },
     } },
 
   { title = "Paragraphs and emphasis",
     cases = {
       { name = "Paragraphs and line breaks",
-        md = "These two lines\njoin into one paragraph.\n\nThis line ends with two spaces  \nso this is on a new line.",
-        expect = "One joined paragraph, then a paragraph with a line break in it." },
+        md = "These two lines\njoin into one paragraph.\n\nThis line ends with two spaces  \nso this is on a new line.\n\n" ..
+             "This line ends with a backslash\\\nso this is on a new line too.",
+        expect = "One joined paragraph, then two paragraphs with a line break in each." },
+      { name = "Footnotes",
+        md = "Arcane Blast stacks four times.[^stacks] Its cost grows with each stack.[^cost]\n\n" ..
+             "[^cost]: Each stack adds 100% to the base mana cost.\n" ..
+             "[^stacks]: The stacks end 18 seconds after the first cast,\n  or when you cast Arcane Barrage.",
+        expect = "[1] and [2] in the text, numbered in reading order, then a rule and the two notes " ..
+                 "(the end of the document; each case here is its own document)." },
       { name = "Emphasis",
         md = "*em* and _em_, **strong** and __strong__, **3** and *x*.",
         expect = "em in the em color, strong in the strong color, including the one-character ones." },
@@ -58,6 +68,9 @@ LibSimpleHTMLMarkdownShowcase = {
       { name = "Indented code block",
         md = "Text first.\n\n    print(\"four spaces\")\n    print(\"make code\")",
         expect = "A paragraph, then two lines of code." },
+      { name = "Other fences",
+        md = "~~~\ntilde fence\n~~~\n\n````\n```\na fence inside a fence\n```\n````",
+        expect = "Two code blocks: \"tilde fence\", then three lines with the ``` lines shown." },
       { name = "Unclosed fence",
         md = "```\nthis fence is never closed",
         expect = "The line in the code color. The next case still renders normally." },
@@ -72,8 +85,16 @@ LibSimpleHTMLMarkdownShowcase = {
         md = "* star\n+ plus\n- dash",
         expect = "One list of three items, all with the same marker." },
       { name = "Ordered lists",
-        md = " 1. one\n 2) two\n^\n\n a) alpha\n B. Bravo\n^\n\n i] roman one\n II. roman two",
-        expect = "Three separate lists: numbers, letters, and Roman numerals, numbered as typed." },
+        md = " 1. one\n 2. two\n^\n\n a) alpha\n B) Bravo\n^\n\n i] roman one\n II. roman two",
+        expect = "Three separate lists: numbers, letters, and Roman numerals, numbered as typed, " ..
+                 "with the ) or . typed (i] shows as i.)." },
+      { name = "Not lists",
+        md = "A. Lincoln was president.\n\nI. M. Pei was an architect.\n\nThe answer is\n42. Not a list.",
+        expect = "Three plain paragraphs: a letter or numeral list needs two items in sequence, " ..
+                 "and only a list starting at 1 can follow a paragraph line." },
+      { name = "List after a paragraph",
+        md = "Shopping:\n- bread\n- milk",
+        expect = "\"Shopping:\", then a two-item list." },
       { name = "Continuation lines",
         md = "1. first item\n   continues here\n2. second item",
         expect = "\"first item continues here\" as item 1, then item 2." },
@@ -83,6 +104,9 @@ LibSimpleHTMLMarkdownShowcase = {
       { name = "Loose list",
         md = "- first\n\n- second, with a paragraph:\n\n  more about the second item",
         expect = "Two items; the second item's paragraph is on the line after it." },
+      { name = "Rule in a list",
+        md = "- above the rule\n\n  ***\n\n- below the rule\n---\n\nafter the list",
+        expect = "An item, a rule, the next item (no empty line before it), a second rule ending the list, then a paragraph." },
       { name = "Task lists",
         md = "- [ ] not done\n- [x] done\n1. [X] numbered and done",
         expect = "An empty box, then a green check in place of the markers. The numbered one keeps its number." },
@@ -97,6 +121,10 @@ LibSimpleHTMLMarkdownShowcase = {
         md = "[inline](https://commonmark.org/help/), [reference][cm], [cm][], <https://example.org>, " ..
              "<user@example.org>\n\n[cm]: https://commonmark.org",
         expect = "Five links. Clicking an http link opens a box with its address." },
+      { name = "More link forms",
+        md = "[Lua](https://en.wikipedia.org/wiki/Lua_(programming_language)), [wow], and an image by reference: ![sap]\n\n" ..
+             "[wow]: https://worldofwarcraft.blizzard.com\n[sap]: Interface\\\\ICONS\\\\ABILITY_SAP.PNG",
+        expect = "Two links (the first opens the full address, ending in \"language)\"), then a Sap icon." },
       { name = "Bare urls",
         md = "Visit https://example.org/path_(info). Or www.example.org, or [https://x.example](https://x.example).",
         expect = "Three links. The period and comma after the first two aren't part of them." },
@@ -117,6 +145,10 @@ LibSimpleHTMLMarkdownShowcase = {
       { name = "Blockquote with a list",
         md = "> - quoted item\n> - another",
         expect = "A quote holding a two-item list." },
+      { name = "Blockquote with a heading, code, and a quote",
+        md = "> ## Patch notes\n> Fixed a bug.\n>\n>     /reload\n>\n> > Quoted in the quote.",
+        expect = "One quote: the heading as a line in the strong color, the text, /reload in the code color, " ..
+                 "then the inner quote in a paler color. No stray \" on a line of its own." },
       { name = "Horizontal rules",
         md = "above\n\n---\n\n***\n\n___\n\nbelow",
         expect = "Three rules between \"above\" and \"below\"." },

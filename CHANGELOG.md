@@ -3,7 +3,7 @@
 Releases are numbered `<major>.0.<minor>` after the LibStub version they register, so 1.0.1 is
 `LibSimpleHTMLMarkdown-1.0` minor 1. Each release's upload changelog is its own section below.
 
-## Unreleased
+## 1.0.3
 
 New Markdown support:
 
@@ -14,12 +14,18 @@ New Markdown support:
   row colored.
 - `~~Strikethrough~~`, shown dimmed.
 - Bare `https://` and `www.` addresses become links.
+- Footnotes: `[^id]` shows a number, and the notes (`[^id]: text`) are listed at the end of the document.
+- `~~~` code fences, and fences of four or more backticks, which can hold a ``` line.
+- Shortcut references (`[id]`) and image references (`![alt][]`, `![alt]`).
+- A backslash at the end of a line breaks it, like two trailing spaces.
 
 Settings without changing other AddOns' text:
 
 - `:ToHTML(text, settings)` applies settings to that call only, and `:New(settings)` makes a renderer with its
   own settings. Changing the library's `config` table changes the text of every AddOn that uses it.
 - The AceGUI widget's settings now apply only to the widget.
+- When a newer copy of the library loads, the config changes AddOns made to the older copy are kept. They
+  were dropped.
 
 Bug fixes:
 
@@ -29,8 +35,18 @@ Bug fixes:
 - `snake_case_names` aren't emphasized, `#hashtag` isn't a heading, and `**x**` is strong.
 - A `|` in code is shown as itself instead of starting a UI escape sequence.
 - The `^` that ends a list is no longer shown.
-- Lists are numbered correctly when an item spans several lines, and an item's indented paragraphs and code
-  stay in the item.
+- Lists are numbered correctly when an item spans several lines, and an item's indented paragraphs, code, and
+  rules stay in the item. Ordered items keep the `)` or `.` typed after their number.
+- A bullet list, or one starting at 1, can start right after a paragraph line. An unindented rule or heading
+  ends a list.
+- "A. Lincoln was president." and "I. M. Pei" aren't lists: a letter or Roman numeral list needs at least
+  two items in sequence.
+- A footnote definition no longer turns into a broken link definition that eats the note's first word.
+- Link urls keep balanced parentheses, as in `(https://en.wikipedia.org/wiki/Lua_(programming_language))`, and
+  backslash escapes work in link definitions' urls.
+- A setext heading (text underlined with `===` or `---`) takes every line of its paragraph.
+- Blockquotes keep code indented in them as code, and a heading or quote inside a quote stays in it instead of
+  leaving a stray `"` on a line of its own.
 
 Also new: `Showcase.lua`, an in-game tour of everything the library renders (enable it in
 `LibSimpleHTMLMarkdown.xml`, then type `/lshm`), and tests that run on every push and before each release.

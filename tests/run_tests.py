@@ -136,7 +136,78 @@ ASSERTIONS = [
     ("<https://q.example>", ['<a href="https://q.example">https://q.example</a>'], ["<a href=\"https://q.example\"><a"]),
     ('<a href="https://r.example">text</a>', ['<a href="https://r.example">text</a>'], []),
     ("`https://code.example`", [], ["<a"]),
+    # footnotes: numbered in order of first reference, listed at the end; unknown ones stay as typed
+    ("b[^two] a[^one] b[^two] [^none]\n\n[^one]: First.\n[^two]: Second,\n  continued.",
+     ["b|cff00dddd[1]|r a|cff00dddd[2]|r b|cff00dddd[1]|r [^none]", "<hr />",
+      "[1]|r|TInterface\\Store\\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Second,\ncontinued."],
+     ["[^one]:", "First.</p>\n<p>|cff00dddd[1]"]),
+    ("```\n[^1]\n```\n\n[^1]: note", ["[^1]"], ["<hr />"]),
+    # link urls keep balanced parentheses; shortcut and collapsed references resolve
+    ("[w](https://x.example/A_(b))", ['href="https://x.example/A_(b)"'], []),
+    ("[w](<https://x.example/a b> \"title\")", ['href="https://x.example/a b"'], ["title"]),
+    ("[id] and [id][] and [x][id]\n\n[id]: https://id.example",
+     ['<a href="https://id.example">id</a> and <a href="https://id.example">id</a> and <a href="https://id.example">x</a>'], []),
+    ("[not a link]", ["[not a link]"], ["<a"]),
+    ("![i][] ![i]\n\n[i]: Interface\\\\ICONS\\\\X", ['<img src="Interface\\ICONS\\X" />'], ["!<a", "\\\\"]),
+    # ~~~ and longer fences; a fence closes only with the same character, at least as long
+    ("~~~\n<b>x</b>\n~~~", ["&lt;b&gt;x&lt;/b&gt;"], ["~~~"]),
+    ("````\n```\ninner\n```\n````", ["```\n<br />inner\n<br />```"], []),
+    ("~~~\n```\nstill code\n~~~\nafter", ["```", "<p>after</p>"], []),
+    # a backslash at the end of a line breaks it
+    ("one\\\ntwo", ["one<br/>\ntwo"], ["\\"]),
+    # a bullet list, or one starting at 1, can start right after a paragraph line
+    ("Text\n- a\n- b", ["<p>Text</p>", "|t *|T"], ["- a"]),
+    ("The answer is\n42. Not a list.", ["42. Not a list."], [" 42."]),
+    # a rule indented under a list item stays in the list; an unindented one ends it
+    ("- a\n\n  ***\n\n- b", ["<hr />"], []),
+    ("- a\n- b\n---\n\nafter", ["<hr />", "<p>after</p>"], ["<h2>"]),
+    # a setext heading takes every line of its paragraph
+    ("one\ntwo\n===", ["<h1>one\ntwo</h1>"], ["<p>one"]),
+    # blockquotes: code, a heading, and a nested quote stay inside the one quote block
+    (">     code", ["|cff66bbbbcode"], []),
+    ("> # Head\n> text", ['|cffbbbb00"|cff00ddddHead|r'], ["<h1>", '"</p>']),
+    ("> outer\n>> inner", ["|cffd8d8a0inner|r"], ['"</p>']),
+    # letter and Roman numeral lists need two or more items in sequence
+    ("A. Lincoln was president.", ["<p>A. Lincoln was president.</p>"], []),
+    ("I. M. Pei was an architect.", ["<p>I. M. Pei was an architect.</p>"], []),
+    ("a) one\nb) two", [" a)", " b)"], []),
+    ("h. eight\ni. nine", [" h.", " i."], []),
+    ("iv. four\nv. five", [" iv.", " v."], []),
+    # ordered items keep the delimiter typed
+    ("1) one\n2) two", [" 1)", " 2)"], [" 1."]),
 ]
+
+
+def check_upgrade(failures):
+    """A newer copy of the library keeps the config changes AddOns made to the older one."""
+    source = read(ROOT, "LibSimpleHTMLMarkdown.lua")
+
+    def load(lua, minor):
+        lua.execute(re.sub(r"local\s+MARKDOWN10_MINOR = \d+", "local MARKDOWN10_MINOR = %d" % minor, source, count=1))
+        return lua.eval('(LibStub("LibSimpleHTMLMarkdown-1.0"))')
+
+    lua = lua51.LuaRuntime(unpack_returned_tuples=True)
+    lua.execute("strmatch = string.match; strfind = string.find")
+    lua.execute(read(ROOT, "LibStub", "LibStub.lua"))
+
+    # from minor 2 and earlier, which kept no copy of their defaults
+    lib = load(lua, 1000)
+    lib.config_defaults = None
+    lib.config.strong = "|cffffcc00"
+    lib.config.custom = "kept"
+    lib = load(lua, 1001)
+    if lib.config.strong != "|cffffcc00" or lib.config.custom != "kept" or lib.config.em != "|cff00dd00":
+        failures.append("upgrade: changes made under a copy without config_defaults weren't kept")
+
+    # from a copy with defaults: changed keys are kept, the rest take the new copy's defaults
+    lib.config.em = "|cffff9966"
+    # code left at an older default that the new copy changed
+    lua.execute('local l = LibStub("LibSimpleHTMLMarkdown-1.0") l.config_defaults.code = "|cff000000" l.config.code = "|cff000000"')
+    lib = load(lua, 1002)
+    if lib.config.em != "|cffff9966" or lib.config.strong != "|cffffcc00":
+        failures.append("upgrade: changes made under a copy with config_defaults weren't kept")
+    if lib.config.code != "|cff66bbbb":
+        failures.append("upgrade: a key left at its old default didn't take the new default")
 
 
 def check_state(lua, failures):
@@ -221,6 +292,7 @@ def main():
                 failures.append("assertion %r: output contains %r\n    %s" % (md, s, html))
 
     check_state(lua, failures)
+    check_upgrade(failures)
 
     if update:
         print("updated %d golden files" % written)
