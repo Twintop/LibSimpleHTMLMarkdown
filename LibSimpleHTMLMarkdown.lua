@@ -30,6 +30,8 @@ LibMarkdown.config = {
   ['/strong'          ] = '|r',
   [ 'em'              ] = '|cff00dd00',
   ['/em'              ] = '|r',
+  [ 'del'             ] = '|cff808080', -- ~~strikethrough~~; SimpleHTML can't strike text, so it's dimmed
+  ['/del'             ] = '|r',
   [ 'ul'              ] = '<p>',
   ['/ul'              ] = '</p><br />',  -- it's almost always the right right choice to put <br /> after a block level tag
   [ 'ol'              ] = '<p>',
@@ -38,6 +40,19 @@ LibMarkdown.config = {
   ['/li'              ] = '<br />',
   -- ['list_marker'      ] = '|TInterface\\MINIMAP\\TempleofKotmogu_ball_purple.PNG:0|t',
   ['list_marker'      ] = '*',
+  -- list_marker_2, list_marker_3, ... set the marker for each nesting depth; unset ones use list_marker
+  ['list_indent'      ] = '|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|t', -- per depth
+  ['task_open'        ] = '|TInterface\\Buttons\\UI-CheckBox-Up:0|t',     -- - [ ] item
+  ['task_done'        ] = '|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t', -- - [x] item
+  [ 'table'           ] = '<p>', -- an align attribute is added when every column has the same alignment
+  ['/table'           ] = '</p><br />',
+  [ 'tr'              ] = '',
+  ['/tr'              ] = '<br />',
+  [ 'th'              ] = '|cff00dddd',
+  ['/th'              ] = '|r',
+  [ 'td'              ] = '',
+  ['/td'              ] = '',
+  ['table_sep'        ] = '  |cff808080|||r  ',
   [ 'pre'             ] = '<p>|cff66bbbb',
   ['/pre'             ] = '|r</p><br />',
   [ 'code'            ] = '|cff66bbbb',
@@ -427,11 +442,15 @@ function LibMarkdown.classify(self, line)
       return info
    end
 
-   if line:match("^(#+)[ \t]*(.-)[ \t]*#*[ \t]*$") then
-      local m1, m2 = line:match("^(#+)[ \t]*(.-)[ \t]*#*[ \t]*$")
+   -- an ATX heading needs a space after its #s, so #hashtag stays text. A closing run of #s
+   -- needs one before it, so "# C#" keeps its #.
+   local hashes, rest = line:match("^(#+)(.*)$")
+   if hashes and (rest == "" or rest:match("^[ \t]")) then
+      local text = rest:gsub("^[ \t]+", ""):gsub("[ \t]+#+[ \t]*$", ""):gsub("[ \t]+$", "")
+      if text:match("^#+$") then text = "" end
       info.type = "header"
-      info.level = math.min(m1:len(), 3)
-      info.text = m2
+      info.level = math.min(hashes:len(), 3)
+      info.text = text
       return info
    end
 
@@ -493,7 +512,15 @@ end
 function LibMarkdown.classify_lines(self, lines)
    local out = {}
    self.inACodeblock = false
-   for i, line in ipairs(lines) do out[i] = self:classify(line) end
+   for i, line in ipairs(lines) do
+      local info = self:classify(line)
+      if info.type == "list_item" then
+         -- the marker's indent, and the column its text starts at, place nested items
+         info.indent = #line:match("^ *")
+         info.content_indent = #(line:match("^ *%S+[ \t]+") or line)
+      end
+      out[i] = info
+   end
    self.inACodeblock = false
    return out
 end
@@ -546,6 +573,8 @@ function LibMarkdown.blocks_to_html(self, lines, no_paragraphs)
       elseif line.type == "header" then
          local s = self.config["h" .. line.level] .. self:span_transform(line.text) .. self.config["/h" .. line.level]
          table.insert(out, s)
+      elseif line.type == "eob" then
+         -- the ^ that ends a list isn't shown
       else
          table.insert(out, line.line)
       end
@@ -564,13 +593,16 @@ function LibMarkdown.lists(self, array, sublist)
          return false
       end
 
+      -- an item indented at least two spaces past the current item's marker is nested in it
       local function split_list_items(arr)
          local acc = {arr[1]}
          local res = {}
+         local parent = arr[1]
          for i=2,#arr do
-            if arr[i].type == "list_item" then
+            if arr[i].type == "list_item" and arr[i].indent < parent.indent + 2 then
                table.insert(res, acc)
                acc = {arr[i]}
+               parent = arr[i]
             else
                table.insert(acc, arr[i])
             end
@@ -579,55 +611,69 @@ function LibMarkdown.lists(self, array, sublist)
          return res
       end
 
-      -- local function process_list_item(lines, block)
-      local function process_list_item(lines, block, number)
+      local depth = self.list_depth or 0
+
+      local function process_list_item(lines, block)
          while lines[#lines].type == "blank" do
             table.remove(lines)
          end
+         local first = lines[1]
+         local number = first.number
 
-         local itemtext = lines[1].text
+         -- continuation lines lose the indent up to the item's text, so a nested list or an
+         -- indented code block is read relative to the item
+         local itemtext = first.text
          for i=2,#lines do
-            itemtext = itemtext .. "\n" .. LibMarkdown.outdent(lines[i].line)
+            local line = lines[i].line
+            local strip = math.min(#line:match("^ *"), first.content_indent)
+            itemtext = itemtext .. "\n" .. line:sub(strip + 1)
          end
 
-         local function format_item(number, itemtext)
-            return '    ' .. 
-                   self.config[number and "emsp" or "ensp"] ..  
+         -- - [ ] and - [x] are task list items
+         local task
+         local box, rest = itemtext:match("^%[([ xX])%][ \t]+(.*)$")
+         if box then
+            task = self.config[box == " " and "task_open" or "task_done"]
+            itemtext = rest
+         end
+
+         local function format_item(text)
+            local marker = number and (number .. ".") or
+                           self.config["list_marker_" .. (depth + 1)] or self.config["list_marker"]
+            if task then marker = number and (marker .. self.config["ensp"] .. task) or task end
+            return '    ' ..
+                   string.rep(self.config["list_indent"], depth) ..
+                   self.config[number and "emsp" or "ensp"] ..
                    self.config.li ..
-                   (number and (number .. ".") or self.config["list_marker"]) ..  
+                   marker ..
                    self.config["ensp"]  ..
-                   itemtext ..
+                   text ..
                    self.config["/li"]
          end
-          
+
+         self.list_depth = depth + 1
          if block then
             itemtext = self:block_transform(itemtext, true)
-            -- if not itemtext:find("<pre>") then itemtext = LibMarkdown.indent(itemtext) end
-            -- return "    <li>" .. itemtext .. "</li>"
-            return format_item(number, itemtext)
          else
-            local lines = LibMarkdown.split(itemtext)
-            lines = self:classify_lines(lines)
-            lines = self:lists(lines, true)
-            lines = self:blocks_to_html(lines, true)
-            itemtext = table.concat(lines, "\n")
-            -- if not itemtext:find("<pre>") then itemtext = LibMarkdown.indent(itemtext) end
-            -- return "    <li>" .. itemtext .. "</li>"
-            return format_item(number, itemtext)
+            local sub = LibMarkdown.split(itemtext)
+            sub = self:classify_lines(sub)
+            sub = self:lists(sub, true)
+            sub = self:blocks_to_html(sub, true)
+            itemtext = table.concat(sub, "\n")
          end
+         self.list_depth = depth
+         return format_item(itemtext)
       end
 
       local block_list = any_blanks(arr)
       local items = split_list_items(arr)
       local out = ""
 
-      -- for _, item in ipairs(items) do
-      --     out = out .. process_list_item(item, block_list) .. "\n"
-      -- end
-
-      for i, item in ipairs(items) do
-         out = out .. process_list_item(item, block_list, arr[i].number) .. "\n"
+      for _, item in ipairs(items) do
+         out = out .. process_list_item(item, block_list) .. "\n"
       end
+      -- a nested list starts on the line after its parent item's text
+      if depth > 0 then out = self.config.br .. "\n" .. out end
 
       if arr[1].list_type == "numeric" or arr[1].list_type == "alphanumeric" or
          arr[1].list_type == "roman_numeric" 
@@ -656,21 +702,29 @@ function LibMarkdown.lists(self, array, sublist)
             end
          else
             for i = 1, #array-1 do
-               if array[i].type == "blank" and array[i+1].type == "list_item" then
+               if (array[i].type == "blank" or array[i].type == "eob") and array[i+1].type == "list_item" then
                   return i+1
                end
             end
          end
          return nil
       end
+      -- after a blank line, the list goes on with another item, or with a line indented as far as
+      -- the last item's text (a paragraph or code that belongs to that item)
       local function find_list_end(array, start)
          local pos = #array
+         local content_indent = array[start].content_indent or 2
          for i = start, #array-1 do
+            if array[i].type == "list_item" and array[i].indent < array[start].indent + 2 then
+               content_indent = array[i].content_indent
+            end
+            local nxt = array[i+1]
             if array[i].type == "eob"
                then return i-1
-            elseif 
-               array[i].type == "blank" and array[i+1].type ~= "list_item"
-               and array[i+1].type ~= "indented" and array[i+1].type ~= "blank" then
+            elseif
+               array[i].type == "blank" and nxt.type ~= "list_item"
+               and nxt.type ~= "indented" and nxt.type ~= "blank"
+               and not (nxt.type == "normal" and #nxt.line:match("^ *") >= content_indent) then
                pos = i-1
                break
             end
@@ -732,14 +786,13 @@ function LibMarkdown.blockquotes(self, lines)
    end
 
    local function process_blockquote(lines)
-      local raw = self:escape_special_chars(lines[1].text)
-      for i = 2,#lines do
-         raw = raw .. self:escape_special_chars(lines[i].text) .. (lines[i].text == "" and "<br /> " .. self.config.nbsp .. ' <br />"' or '')
-      end
-      local bt = self:block_transform(raw)
-      -- if not bt:find("<pre>") then bt = LibMarkdown.indent(bt) end
-      -- return "<blockquote>\n    " .. bt ..  "\n</blockquote>"
-      -- return self.config.blockquote .. raw .. self.config["/blockquote"]
+      -- the quote's lines are markdown of their own, one per line, so a "> " line can hold a
+      -- list or heading and consecutive lines join with a space
+      local texts = {}
+      for i, line in ipairs(lines) do texts[i] = self:escape_special_chars(line.text) end
+      local bt = self:block_transform(table.concat(texts, "\n"))
+      -- the quote is one block, so its paragraphs are kept apart by an empty line
+      bt = bt:gsub("</p>%s*<p[^>]*>", "<br />" .. self.config.nbsp .. "<br />")
       return self.config.blockquote .. LibMarkdown.strip_paragraph_tags(bt) .. self.config["/blockquote"]
    end
 
@@ -805,10 +858,79 @@ function LibMarkdown.codeblocks(self, lines)
    return lines
 end
 
+-- splits a table row into its trimmed cells. Outer pipes are optional; \| is a pipe in a cell,
+-- and so is a | inside a `code span`.
+function LibMarkdown.split_table_row(line)
+   local s = line:gsub("\\|", "\1")
+   -- code spans show a | as itself (encode_code doubles it), other text needs || for one
+   s = s:gsub("(`+)(.-)%1", function(ticks, code) return ticks .. code:gsub("[|\1]", "\2") .. ticks end)
+   s = s:match("^%s*(.-)%s*$")
+   if s:sub(1, 1) == "|" then s = s:sub(2) end
+   if s:sub(-1) == "|" then s = s:sub(1, -2) end
+   local cells = {}
+   for cell in (s .. "|"):gmatch("([^|]*)|") do
+      cells[#cells + 1] = (cell:match("^%s*(.-)%s*$"):gsub("\1", "||"):gsub("\2", "|"))
+   end
+   return cells
+end
+
+-- returns each column's alignment ("left", "center", "right", or false) if line is a table's
+-- delimiter row, such as |---|:---:|
+function LibMarkdown.table_alignments(line)
+   if not line:find("|", 1, true) or not line:find("-", 1, true) then return nil end
+   local aligns = {}
+   for i, cell in ipairs(LibMarkdown.split_table_row(line)) do
+      if not cell:match("^:?%-+:?$") then return nil end
+      local left, right = cell:sub(1, 1) == ":", cell:sub(-1) == ":"
+      aligns[i] = (left and right and "center") or (right and "right") or (left and "left") or false
+   end
+   return aligns
+end
+
+-- find GFM tables (a header row, a delimiter row, then rows up to a blank line) and convert
+-- them to raw html. SimpleHTML can't lay out columns, so each row is a line of cells between
+-- separators, and the header row is colored.
+function LibMarkdown.tables(self, lines)
+   local i = 1
+   while i < #lines do
+      local aligns = lines[i].type == "normal" and lines[i].line:find("|", 1, true) and
+                     lines[i+1].type ~= "indented" and LibMarkdown.table_alignments(lines[i+1].line)
+      local head = aligns and LibMarkdown.split_table_row(lines[i].line)
+      if head and #head == #aligns then
+         local stop = i + 1
+         while lines[stop+1] and lines[stop+1].type == "normal" do stop = stop + 1 end
+
+         local function row(cells, open, close)
+            local out = {}
+            for c = 1, #head do
+               out[c] = self.config[open] .. self:span_transform(cells[c] or "") .. self.config[close]
+            end
+            return self.config.tr .. table.concat(out, self.config.table_sep) .. self.config["/tr"]
+         end
+
+         local rows = { row(head, "th", "/th") }
+         for r = i + 2, stop do
+            table.insert(rows, row(LibMarkdown.split_table_row(lines[r].line), "td", "/td"))
+         end
+
+         local align = aligns[1]
+         for c = 2, #aligns do if aligns[c] ~= align then align = false end end
+         local open = self.config.table
+         if align then open = open:gsub("^<p>", '<p align="' .. align .. '">') end
+
+         local text = open .. "\n" .. table.concat(rows, "\n") .. "\n" .. self.config["/table"]
+         lines = LibMarkdown.splice(lines, i, stop, { { line = text, type = "raw", html = text } })
+      end
+      i = i + 1
+   end
+   return lines
+end
+
 -- perform all the block level transforms
 function LibMarkdown.block_transform(self, text, sublist)
    local lines = LibMarkdown.split(text)
    lines = self:classify_lines(lines)
+   lines = self:tables(lines)
    lines = self:headers(lines)
    lines = self:lists(lines, sublist)
    lines = self:codeblocks(lines)
@@ -826,7 +948,8 @@ function LibMarkdown.last_minute_lmd_fixes(text) --
    text = text:gsub("<p>(<img[^>]*>)</p>", "%1")
    text = text:gsub("<p([^>]*)>%s*<p>(.-)</p>%s*</p>", "<p%1>%2</p>")
    text = text:gsub("<p[^>]*>%s*</p>", "")
-   text = text:gsub("<br />%s*<br />", "<br />")
+   local n
+   repeat text, n = text:gsub("<br />%s*<br />", "<br />") until n == 0
 
    return text
 end
@@ -842,8 +965,12 @@ LibMarkdown.void_blocks = { img = true, hr = true }
 --   * any other nested block closes the open one, and the open one reopens after it.
 -- A block close that doesn't match the open block is dropped, and blocks still open at the
 -- end are closed, since SimpleHTML shows a whole document as raw text if it's malformed.
+-- Inline tags (<a>, or ones SimpleHTML ignores, like <b>) get the same care: a close with no
+-- open tag is dropped, and tags still open when their block ends are closed with it.
+-- <br>, <img>, and <hr> are written self-closed.
 function LibMarkdown.flatten_blocks(text)
    local out, stack, pos = {}, {}, 1
+   local root_inlines = {} -- inline tags open outside any block
 
    -- the innermost block whose tags are actually in the output
    local function enclosing()
@@ -852,12 +979,29 @@ function LibMarkdown.flatten_blocks(text)
       end
    end
 
+   local function inlines()
+      local block = enclosing()
+      return block and block.inlines or root_inlines
+   end
+
+   local function close_inlines(list)
+      for i = #list, 1, -1 do table.insert(out, "</" .. list[i] .. ">") end
+      for i = #list, 1, -1 do list[i] = nil end
+   end
+
+   local function close_block(block)
+      close_inlines(block.inlines)
+      table.insert(out, "</" .. block.name .. ">")
+   end
+
    local function reopen(block)
       if block then
          table.insert(out, block.open)
          block.has_text = false
       end
    end
+
+   local void_inlines = { br = true, img = true, hr = true }
 
    while pos <= #text do
       local lt = text:find("<", pos, true)
@@ -876,13 +1020,17 @@ function LibMarkdown.flatten_blocks(text)
       local block = enclosing()
       pos = stop + 1
 
+      if key and void_inlines[key] and closing == "" and not tag:find("/>$") then
+         tag = tag:sub(1, -2):gsub("%s*$", "") .. " />"
+      end
+
       if key and LibMarkdown.flow_blocks[key] and closing == "" and not tag:find("/>$") then
          if block and key == "p" and block.has_text then
             table.insert(stack, { name = name, merged = true })
          else
-            if block then table.insert(out, "</" .. block.name .. ">") end
+            if block then close_block(block) end
             table.insert(out, tag)
-            table.insert(stack, { name = name, open = tag, has_text = false })
+            table.insert(stack, { name = name, open = tag, has_text = false, inlines = {} })
          end
       elseif key and LibMarkdown.flow_blocks[key] and closing == "/" then
          if #stack > 0 and stack[#stack].name:lower() == key then
@@ -890,21 +1038,36 @@ function LibMarkdown.flatten_blocks(text)
             if top.merged then
                table.insert(out, "<br />")
             else
-               table.insert(out, tag)
+               close_block(top)
                reopen(enclosing())
             end
          end
       elseif key and LibMarkdown.void_blocks[key] and closing == "" and block then
-         table.insert(out, "</" .. block.name .. ">")
+         close_block(block)
          table.insert(out, tag)
          reopen(block)
+      elseif key and void_inlines[key] and closing == "/" then
+         -- </br>, </img>, </hr>: the tag was already closed
+      elseif key and closing == "/" then
+         -- an inline close: closes the matching open tag and any opened after it, or is dropped
+         local list = inlines()
+         for i = #list, 1, -1 do
+            if list[i]:lower() == key then
+               for j = #list, i, -1 do table.insert(out, "</" .. list[j] .. ">") list[j] = nil end
+               break
+            end
+         end
       else
+         if key and not void_inlines[key] and not tag:find("/>$") and closing == "" then
+            table.insert(inlines(), name)
+         end
          table.insert(out, tag)
          if block and key and key ~= "br" then block.has_text = true end
       end
    end
    local block = enclosing()
-   if block then table.insert(out, "</" .. block.name .. ">") end
+   if block then close_block(block) end
+   close_inlines(root_inlines)
    return table.concat(out)
 end
 
@@ -916,7 +1079,7 @@ end
 
 -- these characters may need to be escaped because they have a special
 -- meaning in markdown.
-LibMarkdown.escape_chars = "'\\`*_{}[]()>#+-.!'"
+LibMarkdown.escape_chars = "'\\`*_{}[]()>#+-.!~'"
 LibMarkdown.escape_table = {}
 
 function LibMarkdown.init_escape_table(self)
@@ -982,6 +1145,8 @@ function LibMarkdown.encode_code(self, s)
       s = s:gsub("%&", "&amp;")
       s = s:gsub("<", "&lt;")
       s = s:gsub(">", "&gt;")
+      -- | starts a WoW escape sequence (|c, |T, ...); || shows one | instead
+      s = s:gsub("|", "||")
       -- for k,v in pairs(self.escape_table) do
       --    s = s:gsub("%"..k, v)
       -- end
@@ -1067,7 +1232,9 @@ function LibMarkdown.images(self, text)
 
       local tag = "<img"
 
-      for k, v in pairs(attrs) do tag = tag .. ' ' .. k .. '="' .. v .. '"' end
+      for _, k in ipairs({ "src", "width", "height", "align" }) do
+         if attrs[k] then tag = tag .. ' ' .. k .. '="' .. attrs[k] .. '"' end
+      end
 
       tag = tag .. ' />'
 
@@ -1080,10 +1247,15 @@ function LibMarkdown.images(self, text)
    return text
 end
 
+-- a link's text can show a url without it becoming a second, nested link
+function LibMarkdown.guard_link_text(self, text)
+   return (text:gsub("://", self:add_escape("://")):gsub("www%.", self:add_escape("www.")))
+end
+
 -- handle anchor references
 function LibMarkdown.anchors(self, text)
    local function reference_link(text, id)
-      text = text:match("%b[]"):sub(2,-2)
+      text = self:guard_link_text(text:match("%b[]"):sub(2,-2))
       id = id:match("%b[]"):sub(2,-2):lower()
       if id == "" then id = text:lower() end
       self.link_database[id] = self.link_database[id] or {}
@@ -1098,7 +1270,7 @@ function LibMarkdown.anchors(self, text)
    end
 
    local function inline_link(text, link)
-      text = text:match("%b[]"):sub(2,-2)
+      text = self:guard_link_text(text:match("%b[]"):sub(2,-2))
       local url, title = link:match("%(<?(.-)>?[ \t]*['\"](.+)['\"]")
       title = self:encode_alt(title)
       url  = url or  link:match("%(<?(.-)>?%)") or ""
@@ -1119,13 +1291,14 @@ end
 
 -- handle auto links, i.e. <http://www.google.com/>.
 function LibMarkdown.auto_links(self, text)
+   -- the whole link is protected, so the bare url pass doesn't link its text again
    local function link(s)
-      return self:add_escape("<a href=\"" .. s .. "\">") .. s .. "</a>"
+      return self:add_escape("<a href=\"" .. s .. "\">" .. s .. "</a>")
    end
    local function mail(s)
       s = self:unescape_special_chars(s)
       local address = "mailto:" .. s
-      return self:add_escape("<a href=\"" .. address .. "\">") .. s .. "</a>"
+      return self:add_escape("<a href=\"" .. address .. "\">" .. s .. "</a>")
    end
    -- links
    text = text:gsub("<(https?:[^'\">%s]+)>", link)
@@ -1135,6 +1308,49 @@ function LibMarkdown.auto_links(self, text)
    text = text:gsub("<mailto:([^'\">%s]+)>", mail)
    text = text:gsub("<([-.%w]+%@[-.%w]+)>", mail)
    return text
+end
+
+-- links bare urls (GFM autolinks): http:// and https:// urls, and www. ones (linked as http://).
+-- Trailing punctuation, and a ) that doesn't close a ( in the url, stay outside the link.
+-- Urls inside html tags or raw <a> elements are left alone.
+LibMarkdown.bare_url_patterns = { "%f[%w]https?://[^%s<>\"']+", "%f[%w]www%.[%w%-][^%s<>\"']*" }
+
+function LibMarkdown.bare_links(self, text)
+   local function linkify(s)
+      local out, pos = {}, 1
+      while true do
+         local start, stop = LibMarkdown.find_first(s, LibMarkdown.bare_url_patterns, pos)
+         if not start then break end
+         local url = s:sub(start, stop)
+         while true do
+            local trimmed = url:gsub("[%.,:;!%?%*_~'\"]+$", "")
+            local _, opens = trimmed:gsub("%(", "")
+            local _, closes = trimmed:gsub("%)", "")
+            if trimmed:sub(-1) == ")" and closes > opens then trimmed = trimmed:sub(1, -2) end
+            if trimmed == url then break end
+            url = trimmed
+         end
+         local href = url:match("^www%.") and ("http://" .. url) or url
+         table.insert(out, s:sub(pos, start - 1))
+         table.insert(out, self:add_escape('<a href="' .. href .. '">' .. url .. "</a>"))
+         pos = start + #url
+      end
+      table.insert(out, s:sub(pos))
+      return table.concat(out)
+   end
+
+   local out, in_a = {}, false
+   for _, token in ipairs(LibMarkdown.tokenize_html(text)) do
+      local t = token.text
+      if token.type == "tag" then
+         local closing, name = t:match("^<(/?)(%a%w*)")
+         if name and name:lower() == "a" then in_a = closing == "" end
+      elseif not in_a then
+         t = linkify(t)
+      end
+      table.insert(out, t)
+   end
+   return table.concat(out)
 end
 
 -- returns the position of the ">" that ends the tag or comment starting at the "<" at
@@ -1206,7 +1422,19 @@ end
 
 -- handles emphasis markers (* and _) in the text.
 function LibMarkdown.emphasis(self, text)
+   -- _ between two letters or digits is literal, so snake_case_names stay as they are
+   text = text:gsub("([%w\128-\255])(_+)(%f[%w\128-\255])", function(before, run)
+      return before .. self.escape_table["_"]:rep(#run)
+   end)
+
+   -- ~~strikethrough~~; the text inside can't start or end with a space
+   text = text:gsub("~~([^%s~].-)~~", function(inner)
+      if inner:find("%s$") then return nil end
+      return self.config.del .. inner .. self.config["/del"]
+   end)
+
    for _, s in ipairs {"%*%*", "%_%_"} do
+      text = text:gsub(s .. "([^%s%*%_])" .. s, self.config.strong .. "%1" .. self.config["/strong"])
       text = text:gsub(s .. "([^%s][^<>]-[^%s][%*%_]?)" .. s, self.config.strong .. "%1" .. self.config["/strong"])
       text = text:gsub(s .. "([^%s][^<>]-[^%s][%*%_]?)" .. s, self.config.strong .. "%1" .. self.config["/strong"])
    end
@@ -1308,6 +1536,7 @@ function LibMarkdown.span_transform(self, text)
    text = self:images(text)
    text = self:anchors(text)
    text = self:auto_links(text)
+   text = self:bare_links(text)
    text = self:amps_and_angles(text)
    text = self:emphasis(text)
    text = self:line_breaks(text)
@@ -1368,6 +1597,7 @@ function LibMarkdown.markdown(self, text)
    self:init_escape_table()
    self.pd.blocks = {}
    self.inACodeblock = false
+   self.list_depth = 0
 
    text = self:cleanup(text)
    text = self:protect(text)
@@ -1381,9 +1611,33 @@ function LibMarkdown.markdown(self, text)
    return text
 end
 
-function LibMarkdown.ToHTML(self, param)
+-- returns a config table holding settings, that falls back to the table get_base() returns
+local function overlay_config(get_base, settings)
+   local config = setmetatable({}, { __index = function(_, k) return get_base()[k] end })
+   for k, v in pairs(settings or {}) do config[k] = v end
+   return config
+end
+
+-- returns a renderer with its own config: settings, then the library's config for anything
+-- settings leaves out. Use it instead of changing LibStub(...).config, which every AddOn shares.
+--   local md = LibStub("LibSimpleHTMLMarkdown-1.0"):New({ em = "|cffff9966", ["/em"] = "|r" })
+--   frame:SetText(md:ToHTML(text))
+-- The renderer keeps working, and picks up new defaults, when a newer copy of the library loads.
+function LibMarkdown.New(_, settings)
+   local instance = setmetatable({}, { __index = LibMarkdown })
+   instance.config = overlay_config(function() return LibMarkdown.config end, settings)
+   return instance
+end
+
+function LibMarkdown.ToHTML(self, param, options)
      local ERRMESSAGE = "[" .. MARKDOWN10 .. "]: " .. ":ToHTML() requires a string or list of strings."
      local param_type = type(param)
+
+     -- options apply to this call only, over the renderer's own config
+     if type(options) == "table" then
+        local base = self.config
+        self = setmetatable({ config = overlay_config(function() return base end, options) }, { __index = self })
+     end
 
      if     param_type == "string" 
      then   return self.config.html .. 
@@ -1413,9 +1667,15 @@ function LibMarkdown.ToHTML(self, param)
   end
 
 function LibMarkdown.ShowConfig(self)
-    print("LMD.config = {")
-    for k, v in pairs(self.config)
-    do print(self.config.nbsp .. "['" .. k .. "'] = '" .. v .. "',")
+    -- a renderer from :New() lists the library's keys as well as its own
+    local keys, seen = {}, {}
+    for _, t in ipairs({ LibMarkdown.config, self.config }) do
+       for k in pairs(t) do if not seen[k] then seen[k] = true table.insert(keys, k) end end
+    end
+    table.sort(keys)
+    print("config = {")
+    for _, k in ipairs(keys)
+    do print(self.config.nbsp .. "['" .. k .. "'] = '" .. tostring(self.config[k]) .. "',")
     end
     print("}")
   end

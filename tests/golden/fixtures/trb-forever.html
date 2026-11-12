@@ -1,0 +1,427 @@
+<html><body>
+
+<p>|cff00dd00Twintop's Resource Bar for World of Warcraft: Forever is in early development. Please report any issues via Discord or GitHub. Thanks!|r</p>
+
+<hr />
+
+<h1>1.60.1.19-release (2026-11-12)</h1><br />
+<h2>Mage</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#981">#981</a> Add a new Arcane Blast bar, tracking your Arcane Blast stacks, with the |cff66bbbb$arcaneBlastStacks|r, |cff66bbbb$arcaneBlastStacksMax|r, |cff66bbbb$arcaneBlastTime|r, and |cff66bbbb#arcaneBlast|r bar text variables. It shows once you take the Arcane Blast talent.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#981">#981</a> Each Arcane Blast cast fills one of its four nodes, and the stacks end 18 seconds after the first cast.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#981">#981</a> The Arcane Blast bar joins the bar text Relative to Frame and Color Indicator target lists, and adds an Arcane Blast Stacks source for audio cues.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.18-release (2026-11-10)</h1><br />
+<h2>Druid</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#970">#970</a> Improve bar and bar text update performance.<br />
+
+</p><br />
+
+
+<h2>Priest</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#968">#968</a> Add Inner Fire tracking, with a Color Indicator and the |cff66bbbb$innerFireStacks|r, |cff66bbbb$innerFireStacksMax|r, |cff66bbbb$innerFireTime|r, and |cff66bbbb#innerFire|r bar text variables. The indicator has no targets by default.<br />
+
+</p><br />
+
+
+<h2>Rogue</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#969">#969</a> Add a Death Mark threshold line on the Energy bar and the |cff66bbbb#deathMark|r bar text variable.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#969">#969</a> Add Slice and Dice tracking, with active and ending Color Indicators and the |cff66bbbb$sliceAndDiceTime|r bar text variable. By default, the Energy bar fill turns red while Slice and Dice is down in combat and orange while it is ending.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#969">#969</a> Remove the Venom threshold line.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#969">#969</a> Fix the Mutilate threshold line and the |cff66bbbb#mutilate|r bar text variable.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#970">#970</a> Improve bar and bar text update performance.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.17-release (2026-11-05)</h1><br />
+<h2>General</h2><br />
+<h3>Color Indicators</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#831">#831</a> Built-in gradient colors can be removed, and added back or copied with a new Add Built-in Gradient Color button.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#831">#831</a> Where two gradient colors target the same bar element, the higher one in the list is used.<br />
+
+</p><br />
+
+
+<h3>Other Bars</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#932">#932</a> Add a new Five Second Rule bar for every class that uses mana, tracking the pause in mana regeneration after you spend mana, with |cff66bbbb$fiveSecondRuleDuration|r and |cff66bbbb$fiveSecondRuleDurationRemaining|r bar text, set to Never Show by default.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#932">#932</a> The Five Second Rule bar sits along the inside bottom of the Mana bar, drains over the full five seconds, and can wait to appear until a set number of GCDs or seconds remain.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.16-release (2026-11-03)</h1><br />
+<h2>Druid</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#921">#921</a> Add a Lacerate threshold line on the Rage bar and the |cff66bbbb#lacerate|r bar text variable.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.15-release (2026-10-29)</h1><br />
+<h2>General</h2><br />
+<h3>Thresholds</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#279">#279</a> Remove the threshold lines' separate cooldown refresh.<br />
+
+</p><br />
+
+
+<h2>Druid</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#279">#279</a> Remove the Frenzied Regeneration threshold line.<br />
+
+</p><br />
+
+
+<h2>Rogue</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#279">#279</a> The Feint, Slice and Dice, and Venom threshold lines follow their range.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.14-release (2026-10-25)</h1><br />
+<h2>General</h2><br />
+<h3>Core Changes</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t See <a href="tab:core">Core Changes</a>.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.13-release (2026-10-23)</h1><br />
+<h2>General</h2><br />
+<h3>Core Changes</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t See <a href="tab:core">Core Changes</a>.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.12-release (2026-10-23)</h1><br />
+<h2>General</h2><br />
+<h3>Core Changes</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t See <a href="tab:core">Core Changes</a>.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.11-release (2026-10-21)</h1><br />
+<h2>General</h2><br />
+<h3>Other Bars</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Ranged Swing switches to new Held by Movement fill and background colors while moving delays your next shot, and stays up empty past the end of its swing until the shot can fire. On by default for Hunter, Mage, Priest, Rogue, Warlock, and Warrior.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Ranged Swing's Show Bar When list adds Held by Movement, on by default.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add |cff66bbbb$rangedSwingReadyRemaining|r bar text, the time until your next ranged attack can fire, including the time standing still it needs after you move.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Fix Open Global Other Bars Settings in the Blizzard Swing Timers section of Off Hand Swing and Ranged Swing opening the Main Hand Swing tab.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.10-release (2026-10-15)</h1><br />
+<h2>General</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Fix changing gear not updating the primary resource bar's maximum.<br />
+
+</p><br />
+
+
+<h3>Audio Cues</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#849">#849</a> Add an Audio Cues tab for Hunter, Mage, Paladin, Priest, Shaman, Warlock, and Warrior.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#850">#850</a> Thresholds tab audio cues play while their bar is hidden.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.9-release (2026-10-14)</h1><br />
+<h2>General</h2><br />
+<h3>Color Indicators</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#773">#773</a> Add a Color Indicators tab for Hunter, Mage, Paladin, Priest, Shaman, and Warlock.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.8-release (2026-10-12)</h1><br />
+<h2>General</h2><br />
+<h3>Core Changes</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t See <a href="tab:core">Core Changes</a>.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.7-release (2026-10-10)</h1><br />
+<h2>General</h2><br />
+<h3>Core Changes</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t See <a href="tab:core">Core Changes</a>.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.6-release (2026-10-09)</h1><br />
+<h2>General</h2><br />
+<h3>Core Changes</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t See <a href="tab:core">Core Changes</a>.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.5-release (2026-10-07)</h1><br />
+<h2>General</h2><br />
+<h3>Cast Bars</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add channel tick markers for bandages, Cannibalize, and Rapid Regeneration.<br />
+
+</p><br />
+
+
+<h2>Druid</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add channel tick markers for Tranquility and Hurricane.<br />
+
+</p><br />
+
+
+<h2>Hunter</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add channel tick markers for Volley and Mend Pet.<br />
+
+</p><br />
+
+
+<h2>Mage</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add channel tick markers for Arcane Missiles, Blizzard, and Evocation.<br />
+
+</p><br />
+
+
+<h2>Priest</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add channel tick markers for Mind Flay, Penance, and Starshards.<br />
+
+</p><br />
+
+
+<h2>Warlock</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add channel tick markers for Drain Life, Drain Mana, Drain Soul, Health Funnel, Hellfire, Rain of Fire, and Wrack.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Pet Cast Bar channel tick markers for Consume Shadows.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.4-release (2026-10-06)</h1><br />
+<h2>General</h2><br />
+<h3>Core Changes</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t See <a href="tab:core">Core Changes</a>.<br />
+
+</p><br />
+
+
+<h3>Pet Bars</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#551">#551</a> Available to Hunters and Warlocks.<br />
+
+</p><br />
+
+
+<h3>Other Bars</h3><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t <a href="#844">#844</a> Add new Main Hand Swing, Off Hand Swing, and Ranged Swing bars, tracking your auto attack swing timers, with |cff66bbbb$mainHandSwingDuration|r, |cff66bbbb$mainHandSwingDurationRemaining|r, |cff66bbbb$offHandSwingDuration|r, |cff66bbbb$offHandSwingDurationRemaining|r, |cff66bbbb$rangedSwingDuration|r, |cff66bbbb$rangedSwingDurationRemaining|r, |cff66bbbb$mainHandLocale|r, |cff66bbbb$offHandLocale|r, and |cff66bbbb$rangedLocale|r bar text. Set to Never Show by default; enable them under Bar Visibility, where their Show Bar When lists add the General, Mounted, Social, Location, and PvP conditions, and Main Hand Swing's Always Hide Bar When list adds Item not equipped.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Each bar grows to full by your next swing, or drains, scaled to your weapon speed. Main Hand Swing always shows; Off Hand Swing and Ranged Swing need a weapon in their slot.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t All three join the bar text Relative to Frame list, have no threshold lines or Smooth Bar Animation, and share one option to hide Blizzard's swing timers.<br />
+
+</p><br />
+
+
+<h2>Druid</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add a Primal Bite threshold line on the Rage bar and the |cff66bbbb#primalBite|r bar text variable.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Remove the Tiger's Fury threshold line and the |cff66bbbb#tigersFury|r bar text variable.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add a Maximum Bar Value override to the Rage and Energy bars.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Fix the |cff66bbbb$rage|r overcap text color using ten times the maximum Rage.<br />
+
+</p><br />
+
+
+<h2>Warrior</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Spearing Strike's threshold line only draws in Battle Stance.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Fix the Rage bar's fill, threshold lines, and |cff66bbbb$rageMax|r using ten times the maximum Rage.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.3-release (2026-10-03)</h1><br />
+<h2>General</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Fix the Flavor check from preventing the addon from loading.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.2-release (2026-09-29)</h1><br />
+<h2>General</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Fix a Lua error when enabling Edit Mode for a bar group.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.1-release (2026-09-28)</h1><br />
+<h2>General</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Combo Points for Rogues and Druids are enabled.<br />
+
+</p><br />
+
+
+<h2>Druid</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Color Indicators tab with Stealth, plus Rage and Energy Overcap gradients that each target only their own bar and have their own overcap threshold.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Font &amp; Text colors for Rage and Energy text, set separately, when an enabled threshold ability on that bar is usable and when that resource is at or above its overcap threshold.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Audio Cues tab with Combo Point threshold cues at 3 and 5, both off.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Finisher threshold lines use the below color, not unusable, when you have Combo Points but not enough Energy.<br />
+
+</p><br />
+
+
+<h2>Rogue</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Threshold lines on the Energy bar for Sinister Strike, Backstab, Mutilate, Hemorrhage, Ghostly Strike, Ambush, Garrote, Cheap Shot, Gouge, Riposte, Eviscerate, Rupture, Slice and Dice, Kidney Shot, Expose Armor, Venom, Feint, Sap, Kick, Distract, Blind, and Blade Flurry, on the Thresholds tab. Ambush, Garrote, Cheap Shot, and Sap only draw while stealthed.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Bar text variables |cff66bbbb$inStealth|r, |cff66bbbb#ambush|r, |cff66bbbb#backstab|r, |cff66bbbb#cheapShot|r, |cff66bbbb#eviscerate|r, |cff66bbbb#exposeArmor|r, |cff66bbbb#garrote|r, |cff66bbbb#gouge|r, |cff66bbbb#hemorrhage|r, |cff66bbbb#kick|r, |cff66bbbb#kidneyShot|r, |cff66bbbb#mutilate|r, |cff66bbbb#rupture|r, |cff66bbbb#sinisterStrike|r, and |cff66bbbb#sliceAndDice|r.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Color Indicators tab with Stealth and an Overcap gradient.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Font &amp; Text colors for Energy text when an enabled threshold ability is usable and when Energy is at or above the overcap threshold.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Audio Cues tab with Combo Point threshold cues at 3 and 5, both off.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Maximum Energy Value, Relative Energy Offset Amount, and Overcap Above Energy sliders reach 110 Energy.<br />
+
+</p><br />
+
+
+<h2>Warrior</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Threshold lines on the Rage bar for Heroic Strike, Cleave, Rend, Thunder Clap, Overpower, Execute, Sunder Armor, Revenge, Slam, Whirlwind, Shield Slam, Mortal Strike, Bloodthirst, Death Wish, Sweeping Strikes, Spearing Strike, Hamstring, Shield Bash, Intercept, Pummel, Battle Shout, Demoralizing Shout, Intimidating Shout, Disarm, Concussion Blow, Piercing Howl, Shield Block, Challenging Shout, and Mocking Blow, on the Thresholds tab. A stance-restricted ability only draws its line in a stance that can cast it.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Bar text icon variables for every one of those abilities.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Color Indicators tab with an Overcap gradient.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Add Font &amp; Text colors for Rage text when an enabled threshold ability is usable and when Rage is at or above the overcap threshold.<br />
+
+</p><br />
+
+
+<hr />
+
+<h1>1.60.1.0-release (2026-09-20)</h1><br />
+<h2>General</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t First build for World of Warcraft: Forever. All nine classes are supported with a primary resource bar (Mana, Rage, or Energy), Combo Points for Rogues, plus the health bar, cast bars, Global Cooldown bar, and mirror timer bars shared with the main game's version of the addon.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Threshold lines for abilities for those that can use them will be added Soon (tm).<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t |cff00ddddNOTE:|r Combo Points for Rogues and Druids are disabled due to a bug where they return as |cff66bbbbsecret|r. Blizzard is aware of this and I'll update the addon when they fix it.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Bar text stat variables follow this game's character sheet: |cff66bbbb$spirit|r, |cff66bbbb$ap|r, |cff66bbbb$rap|r, |cff66bbbb$crit|r, |cff66bbbb$rangedCrit|r, |cff66bbbb$spellCrit|r, |cff66bbbb$hit|r, |cff66bbbb$rangedHit|r, |cff66bbbb$spellHit|r, |cff66bbbb$haste|r, |cff66bbbb$meleeHaste|r, |cff66bbbb$rangedHaste|r, |cff66bbbb$expertise|r, |cff66bbbb$armorPen|r, |cff66bbbb$spellPower|r (plus |cff66bbbb$spellPowerHoly|r through |cff66bbbb$spellPowerArcane|r), |cff66bbbb$healingPower|r, |cff66bbbb$spellPenetration|r, |cff66bbbb$mp5|r, |cff66bbbb$mp5NotCasting|r, |cff66bbbb$defense|r, |cff66bbbb$dodge|r, |cff66bbbb$parry|r, |cff66bbbb$block|r, |cff66bbbb$blockValue|r, |cff66bbbb$armor|r, and |cff66bbbb$resistArcane|r through |cff66bbbb$resistShadow|r. Mastery, Versatility, and rating variables do not exist here.<br />
+
+</p><br />
+
+
+<h2>Druid</h2><br />
+
+<p>
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Mana, Rage, Energy, and Combo Points are four separate bars, each with its own dimensions, colors, textures, and visibility settings. By default the Always Hide Bar When form conditions hide Mana in Cat, Bear, and Moonkin Form, Rage outside Bear Form, and Energy and Combo Points outside Cat Form.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Threshold lines for Maul, Demoralizing Roar, Bash, Challenging Roar, Frenzied Regeneration, Swipe, and Feral Charge on the Rage bar, and for Claw, Shred, Rake, Ravage, Pounce, Rip, Ferocious Bite, Cower, and Tiger's Fury on the Energy bar.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Bar text variables |cff66bbbb$mana|r, |cff66bbbb$manaMax|r, |cff66bbbb$manaPercent|r, |cff66bbbb$casting|r, |cff66bbbb$rage|r, |cff66bbbb$rageMax|r, |cff66bbbb$energy|r, |cff66bbbb$energyMax|r, |cff66bbbb$comboPoints|r, |cff66bbbb$comboPointsMax|r, and |cff66bbbb$inStealth|r; Rage Bar, Energy Bar, and each Combo Point are bar text Relative to Frame targets. Mana, Rage, and Energy text each have their own color on the Font &amp; Text tab.<br />
+    |TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t *|TInterface\Store\ServicesAtlas:0:0.25:0:0:1024:1024:1023:1024:1023:1024|t Bar Visibility and Combo Points start with Use Global off.<br />
+
+</p><br />
+
+
+<hr />
+
+</body></html>

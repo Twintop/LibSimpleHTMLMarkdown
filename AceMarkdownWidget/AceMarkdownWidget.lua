@@ -404,7 +404,7 @@ local widgetMethods =
            self.html.Html = nil
            self.html:SetText()
       else self.html.Markdown = markdown
-           local html = self:GetLibSimpleHTMLMarkdown():ToHtml(markdown)
+           local html = self:GetLibSimpleHTMLMarkdown():ToHtml(markdown, self.LibSimpleHTMLMarkdownOptions)
            self.html.Html = html
            self.html:SetText(html)
       end
@@ -433,12 +433,13 @@ local widgetMethods =
       return self.LibSimpleHTMLMarkdown
     end,
 
+  -- settings apply to this widget's text only; the library's config is shared by every AddOn
   ["SetLibSimpleHTMLMarkdownConfig"] =
     function(self, settings)
       if not settings then return end
-      local LMD = self:GetLibSimpleHTMLMarkdown()
-      for k, v in pairs(settings) do LMD.config[k] = v end
-      return LMD
+      self.LibSimpleHTMLMarkdownOptions = self.LibSimpleHTMLMarkdownOptions or {}
+      for k, v in pairs(settings) do self.LibSimpleHTMLMarkdownOptions[k] = v end
+      return self:GetLibSimpleHTMLMarkdown()
     end,
 
   ["SetFontStepFromFontObject"] = 
@@ -528,6 +529,7 @@ local widgetMethods =
       self:SetClickHandler(           config.ClickHandler       )
       self:SetMouseOverHandler(       config.MouseOverHandler   )
       self:SetFontStepFromFontObject( config.LargeFont          )
+      self.LibSimpleHTMLMarkdownOptions = nil -- AceGUI recycles widgets, so start from the defaults
       self:SetLibSimpleHTMLMarkdownConfig(      config.LibSimpleHTMLMarkdownConfig )
 
     end,

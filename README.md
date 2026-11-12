@@ -24,10 +24,10 @@ having to worry that you forgot to close the right tags.
 
 ## Usage
 
-The library implements only one function, `:ToHTML()` (also available as `:ToHtml()`),
-which takes an argument of either a single string or a table of strings (joined as lines),
-and returns a string with HTML formatting, appropriate for the `:SetText()` function on a
-`SimpleHTML` frame.
+The library's main function is `:ToHTML()` (also available as `:ToHtml()`), which takes
+either a single string or a table of strings (joined as lines), and returns a string with
+HTML formatting, appropriate for the `:SetText()` function on a `SimpleHTML` frame. An
+optional second argument changes the [configuration](#configuration) for that call only.
 
 ```
 local LSHM = LibStub("LibSimpleHTMLMarkdown-1.0");
@@ -72,7 +72,8 @@ Heading 2
 ```
 
 These are rendered as `&lt;h1&gt;`, `&lt;h2&gt;`, and `&lt;h3&gt;` HTML tags.
-Level 4 headings and above will be converted down to `&lt;h3&gt;`.
+Level 4 headings and above will be converted down to `&lt;h3&gt;`. As in CommonMark, the
+`#`s must be followed by a space, so `#hashtag` stays text.
 
 ```
 [Link Name](http://LinkURL)
@@ -130,6 +131,38 @@ Likewise, LibSimpleHTMLMarkdown will generate pseudo-ordered lists, even though 
 doesn't support `&lt;ol&gt;`. As an extension to standard markdown, LibSimpleHTMLMarkdown
 supports letters or Roman numerals for lists. (To distinguish between Roman numeral
 one and a lowercase I, use a square bracket for `i]`.)
+
+```
+- Fruit
+  - Apple
+    - Granny Smith
+- [ ] Not done yet
+- [x] Done
+```
+
+Indent an item at least two spaces past its parent's marker to nest it. Each level is
+indented further (the `list_indent` setting), and `list_marker_2`, `list_marker_3`, and so on
+can set a different marker per level. Task list items (GitHub's `[ ]` and `[x]`) show an
+empty box or a check mark in place of the marker.
+
+```
+| Spell     | Cost |
+|-----------|-----:|
+| Fireball  |   2% |
+| Frostbolt |   1% |
+```
+
+`SimpleHTML` can't lay out columns, so a table is shown one row per line, with the cells
+between dim `|` separators and the header row in its own color. A table is centered or
+right-aligned when every one of its columns is. Use `\|` for a pipe inside a cell.
+
+```
+~~Strikethrough~~
+https://example.org and www.example.org
+```
+
+`SimpleHTML` can't draw a line through text, so strikethrough is shown dimmed. Bare
+`http://`, `https://`, and `www.` addresses become links, like `<https://example.org>`.
 
 ```
 ![Alt Text](Interface\\ICONS\\ABILITY_SAP.PNG)
@@ -200,7 +233,8 @@ __Bold Text__
 ```
 
 `SimpleHTML` has no ability to produce inline bolding or italics, and doesn't recognize
-`&lt;b&gt;`, `&lt;i&gt;`, `&lt;em&gt;`, or `&lt;strong&lt;` HTML tags.
+`&lt;b&gt;`, `&lt;i&gt;`, `&lt;em&gt;`, or `&lt;strong&lt;` HTML tags. An `_` between two
+letters or digits is literal, so `snake_case_names` aren't emphasized.
 
 See below under "Configuration", however.
 
@@ -214,24 +248,38 @@ See below under "Configuration", however.
     print("Code blocks can also be created by starting a line with 4 spaces.")
 ```
 
+A `|` in code is shown as itself rather than starting a UI escape sequence.
+
 ## Configuration
 
 LibSimpleHTMLMarkdown requires no specific configuration to use, and usually the default options
 will work just fine. However, you are able to change the appearance of certain unsupported
 tags -- specificially the colors -- by embedding UI escape codes.
 
-You do this by setting properties in the library object's `config` table.
+The library object is shared by every AddOn that embeds it, so don't change its `config` table:
+your settings would apply to every other AddOn's text too. Instead, pass your settings to
+`:ToHTML()`, which applies them to that call only:
 
-``` 
+```
 local LSHM = LibStub("LibSimpleHTMLMarkdown-1.0");
 
-LSHM.config["em"]          = "|cffbbbb00"; -- emphasized text in yellow
-LSHM.config["/em"]         = "|r"; -- this ends the yellow text; close your tags!
-LSHM.config["blockquote"]  = "|cff00dddd"; -- blockquotes in cyan
-LSHM.config["/blockquote"] = "|r";
+local settings = {
+  ["em"]          = "|cffbbbb00", -- emphasized text in yellow
+  ["/em"]         = "|r",         -- this ends the yellow text; close your tags!
+  ["list_marker"] = "|TInterface\\MINIMAP\\TempleofKotmogu_ball_purple.PNG:0|t",
+                                  -- a purple ball for the list marker
+};
 
-LSHM.config["list_marker"] = "|TInterface\\MINIMAP\\TempleofKotmogu_ball_purple.PNG:0|t";
-                             -- a purple ball for the list marker
+MyFrame:SetText( LSHM:ToHTML(text, settings) );
+```
+
+Or make a renderer of your own with `:New()`. It uses your settings, and the library's
+defaults for anything you leave out, and keeps working when a newer copy of the library loads:
+
+```
+local MyMarkdown = LibStub("LibSimpleHTMLMarkdown-1.0"):New(settings);
+
+MyFrame:SetText( MyMarkdown:ToHTML(text) );
 ```
 
 To see what you can change, see the source or type `/script LibStub("LibSimpleHTMLMarkdown-1.0"):ShowConfig()`
@@ -240,6 +288,18 @@ To see what you can change, see the source or type `/script LibStub("LibSimpleHT
 
 Included in this package is a `Demo.lua` file that you can enable in `LibSimpleHTMLMarkdown.xml`.
 It has some sample code; to view it once it's loaded, type `/script LSHMDemoFrame:Show()`.
+
+`Showcase.lua`, also enabled in `LibSimpleHTMLMarkdown.xml`, is a page-by-page tour of everything
+the library renders, for checking a change by eye in game. Each case shows its markdown, what you
+should see, and the result. Type `/lshm` to open it.
+
+## Tests
+
+`tests/run_tests.py` renders the showcase cases, the demo text, a set of probes, and some real
+AddOn news pages under Lua 5.1, and checks that each output is markup `SimpleHTML` can parse and
+matches its golden file in `tests/golden/`. It needs [lupa](https://pypi.org/project/lupa/)
+(`pip install lupa`). After an intended change to the output, run it with `--update` and review
+the golden file diffs. GitHub Actions runs the tests on every push, and before each release.
 
 ## Changes from LibMarkdown
 
@@ -281,3 +341,21 @@ LibSimpleHTMLMarkdown 1.0 minor 1 starts from LibMarkdown-1.0 minor 9, the last 
 - The AceGUI widget only registers when `AceGUI-3.0` is loaded, keeps its library reference
   (it was overwritten with `false`), and its default list marker uses the `list_marker` key
   the library actually reads.
+- The AceGUI widget's settings apply to its own text; they were written into the library's
+  shared config, changing every AddOn's text.
+- A closing tag with no opening tag (`</a>`) is dropped, a tag left open is closed with its
+  block, and `<br>`, `<img>`, and `<hr>` are self-closed, since SimpleHTML can't parse them otherwise.
+- Blockquote lines are joined with a space instead of run together, and a blank `>` line no
+  longer adds a stray `"`.
+- `_` inside a word, `#hashtag`, and `**x**` (one character) are rendered as CommonMark does.
+- A `|` in code no longer starts a UI escape sequence.
+- The `^` that ends a list isn't shown, and a list right after it is still a list.
+- Lists nest, list items are numbered from their own lines, and an item's indented paragraphs
+  and code stay in the item.
+- Image attributes are written in a fixed order.
+
+### Added
+
+- Nested lists, task lists, GFM tables, `~~strikethrough~~`, and bare url links.
+- `:ToHTML(text, settings)` and `:New(settings)`, so an AddOn's settings don't change the
+  shared config.

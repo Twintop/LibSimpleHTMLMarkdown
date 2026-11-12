@@ -3,6 +3,38 @@
 Releases are numbered `<major>.0.<minor>` after the LibStub version they register, so 1.0.1 is
 `LibSimpleHTMLMarkdown-1.0` minor 1. Each release's upload changelog is its own section below.
 
+## Unreleased
+
+New Markdown support:
+
+- Nested lists. Each level is indented further, and `list_marker_2`, `list_marker_3`, and so on can give each
+  level its own marker.
+- Task lists: `- [ ]` and `- [x]` show an empty box or a check mark.
+- Tables. SimpleHTML can't lay out columns, so each row is a line of cells between separators, with the header
+  row colored.
+- `~~Strikethrough~~`, shown dimmed.
+- Bare `https://` and `www.` addresses become links.
+
+Settings without changing other AddOns' text:
+
+- `:ToHTML(text, settings)` applies settings to that call only, and `:New(settings)` makes a renderer with its
+  own settings. Changing the library's `config` table changes the text of every AddOn that uses it.
+- The AceGUI widget's settings now apply only to the widget.
+
+Bug fixes:
+
+- A closing tag with no opening tag (`</a>`), a tag left open, or `<br>` without a slash no longer makes
+  SimpleHTML show the whole document as raw text.
+- Blockquote lines are joined with a space instead of run together, and a blank `>` line no longer adds a `"`.
+- `snake_case_names` aren't emphasized, `#hashtag` isn't a heading, and `**x**` is strong.
+- A `|` in code is shown as itself instead of starting a UI escape sequence.
+- The `^` that ends a list is no longer shown.
+- Lists are numbered correctly when an item spans several lines, and an item's indented paragraphs and code
+  stay in the item.
+
+Also new: `Showcase.lua`, an in-game tour of everything the library renders (enable it in
+`LibSimpleHTMLMarkdown.xml`, then type `/lshm`), and tests that run on every push and before each release.
+
 ## 1.0.2
 
 Bug fixes. Each of these could leave a document mangled, or make SimpleHTML show the whole document as raw text.

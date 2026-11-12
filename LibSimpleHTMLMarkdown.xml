@@ -4,5 +4,6 @@
 	
         <Script  file="LibSimpleHTMLMarkdown.lua"               />
         <!-- <Script  file="Demo.lua"                           /> -->
+        <!-- <Script  file="Showcase.lua"                       /> -->
         <Include file="AceMarkdownWidget\AceMarkdownWidget.xml" />
 </Ui>

@@ -49,6 +49,15 @@ jobs:
           fi
           echo "$LUA and $TOC are both $TAG"
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run the tests
+        run: |
+          pip install "lupa>=2,<3"
+          python tests/run_tests.py
+
       - name: Cut CHANGELOG.md down to the tag's section
         shell: bash
         run: |
