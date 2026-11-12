@@ -25,6 +25,19 @@ WoW extensions:
 
 `\^`, `\=`, and `\:` are backslash escapes, for text these would otherwise change.
 
+Faster:
+
+- Rendering is several times faster: a 51 KB news page went from about 450 ms to about 60 ms. Showing a
+  document again with the same settings takes no time at all, since recent renders are kept (changing any
+  setting renders it again).
+
+Also:
+
+- A loose list item's later paragraphs and code start indented under the item's text.
+- `***both***` has a color of its own (`strong_em`), instead of em's color inside strong's.
+- A blank line ends a blockquote, so two quotes (or alerts) with a blank line between them are two blocks. A
+  line of just `>` still continues a quote.
+
 ## 1.0.3
 
 New Markdown support:

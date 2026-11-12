@@ -43,8 +43,9 @@ LibSimpleHTMLMarkdownShowcase = {
         expect = "[1] and [2] in the text, numbered in reading order, then a rule and the two notes " ..
                  "(the end of the document; each case here is its own document)." },
       { name = "Emphasis",
-        md = "*em* and _em_, **strong** and __strong__, **3** and *x*.",
-        expect = "em in the em color, strong in the strong color, including the one-character ones." },
+        md = "*em* and _em_, **strong** and __strong__, **3** and *x*, ***both*** and ___both___.",
+        expect = "em in the em color, strong in the strong color, including the one-character ones, " ..
+                 "and both in a color of its own (mint)." },
       { name = "Strikethrough",
         md = "~~struck through~~ and ~~ not this ~~",
         expect = "\"struck through\" dimmed gray; SimpleHTML can't draw a line through text. " ..
@@ -102,8 +103,10 @@ LibSimpleHTMLMarkdownShowcase = {
         md = "- fruit\n  - apple\n  - pear\n    - conference\n- vegetables\n  1. carrot\n  2. leek",
         expect = "Each level indented further than its parent, each item on its own line." },
       { name = "Loose list",
-        md = "- first\n\n- second, with a paragraph:\n\n  more about the second item",
-        expect = "Two items; the second item's paragraph is on the line after it." },
+        md = "- first\n\n- second, with a paragraph:\n\n  more about the second item\n\n      /reload\n\n" ..
+             "  - nested\n\n    more about the nested item",
+        expect = "Two items. The second item's paragraph and its /reload code start indented under its text, " ..
+                 "and the nested item's paragraph is indented one step further." },
       { name = "Rule in a list",
         md = "- above the rule\n\n  ***\n\n- below the rule\n---\n\nafter the list",
         expect = "An item, a rule, the next item (no empty line before it), a second rule ending the list, then a paragraph." },

@@ -205,7 +205,51 @@ ASSERTIONS = [
     ("`:check:`", [":check:"], ["ReadyCheck"]),
     # game links are ordinary links
     ("[Fireball](spell:133)", ['<a href="spell:133">Fireball</a>'], []),
+    # a loose item's later paragraphs start one list_indent in per level; nested lists keep their own
+    ("- a\n\n  more", ["<br />\n\n|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|tmore"], []),
+    ("- a\n\n  - b\n\n    more b",
+     ["|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|t" * 2 + "more b"],
+     ["|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|t" * 3]),
+    # ***both*** has a color of its own
+    ("***both*** ___too___", ["|cff80ffd0both|r |cff80ffd0too|r"], ["|cff00dddd"]),
+    ("**strong *em* inside**", ["|cff00ddddstrong |cff00dd00em|r inside|r"], []),
 ]
+
+
+def check_cache(lua, failures):
+    """Repeat renders come from the cache, and any change to the settings renders again."""
+    lua.execute("""
+        local l = LibStub("LibSimpleHTMLMarkdown-1.0")
+        CACHE_RESULTS = {}
+        local function note(name, ok) CACHE_RESULTS[#CACHE_RESULTS + 1] = ok and "" or name end
+        local doc = "*em* and :check:"
+        l.render_cache, l.render_cache_count = {}, 0
+        local markdown, calls = l.markdown, 0
+        l.markdown = function(...) calls = calls + 1 return markdown(...) end
+
+        local first = l:ToHTML(doc)
+        note("a repeat render wasn't served from the cache", l:ToHTML(doc) == first and calls == 1)
+
+        l.config.em = "|cff123456"
+        note("a change to the shared config served a stale render", l:ToHTML(doc):find("|cff123456em", 1, true))
+        l.config.em = "|cff00dd00"
+        note("the original config didn't come back from the cache", l:ToHTML(doc) == first)
+
+        note("per-call options served a stale render", l:ToHTML(doc, { em = "|cffabcdef" }):find("|cffabcdefem", 1, true))
+        local md = l:New({ [":check:"] = "CHECK" })
+        note("a :New() renderer served the library's render", md:ToHTML(doc):find("CHECK", 1, true))
+        md.config[":check:"] = "CHANGED"
+        note("a change to a :New() renderer's settings served a stale render", md:ToHTML(doc):find("CHANGED", 1, true))
+
+        local before = calls
+        for i = 1, l.render_cache_limit + 5 do l:ToHTML("doc " .. i) end
+        note("the cache grew past its limit", l.render_cache_count <= l.render_cache_limit)
+        note("rendering stopped calling markdown", calls > before)
+        l.markdown = markdown
+    """)
+    for problem in lua_list(lua.globals().CACHE_RESULTS):
+        if problem:
+            failures.append("cache: " + problem)
 
 
 def check_headings(lua, failures):
@@ -335,6 +379,7 @@ def main():
     check_state(lua, failures)
     check_upgrade(failures)
     check_headings(lua, failures)
+    check_cache(lua, failures)
 
     if update:
         print("updated %d golden files" % written)

@@ -353,6 +353,9 @@ MyFrame:SetText( MyMarkdown:ToHTML(text) );
 AddOns that do change the shared `config` keep their changes when a newer copy of the library
 loads.
 
+The library keeps its 20 most recent renders, by text and settings, so showing a document again
+doesn't render it again. Changing any setting, in any of these ways, renders it anew.
+
 To see what you can change, see the source or type `/script LibStub("LibSimpleHTMLMarkdown-1.0"):ShowConfig()`
 
 ## Demo Frames

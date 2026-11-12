@@ -33,6 +33,8 @@ LibMarkdown.config = {
   ['/strong'          ] = '|r',
   [ 'em'              ] = '|cff00dd00',
   ['/em'              ] = '|r',
+  [ 'strong_em'       ] = '|cff80ffd0', -- ***both***, strong and emphasized
+  ['/strong_em'       ] = '|r',
   [ 'del'             ] = '|cff808080', -- ~~strikethrough~~; SimpleHTML can't strike text, so it's dimmed
   ['/del'             ] = '|r',
   [ 'mark'            ] = '|cffffff66', -- ==highlight==; SimpleHTML can't color a background, so the text is colored
@@ -181,7 +183,8 @@ function LibMarkdown.split(text, sep)
 
 -- converts tabs to spaces
 function LibMarkdown.detab(text)
-   if text ~= nil then
+   -- the pattern below scans every line, so skip text without tabs
+   if text ~= nil and text:find("\t", 1, true) then
       local tab_width = 4
       local function rep(match)
          local spaces = -match:len()
@@ -827,6 +830,16 @@ function LibMarkdown.lists(self, array, sublist)
          self.list_depth = depth + 1
          if block then
             itemtext = self:block_transform(itemtext, true)
+            -- the item's later paragraphs (and code) start under its text, not at the left edge.
+            -- A nested list, which starts with a line break, and a nested item's paragraphs,
+            -- which start with their own indent, are already indented.
+            local unit = self.config["list_indent"]
+            local indent = string.rep(unit, depth + 1)
+            local blocks = itemtext
+            itemtext = blocks:gsub("</p>(%s*)<p>()", function(space, after)
+               if blocks:find("^%s*<br />", after) or blocks:sub(after, after + #unit - 1) == unit then return nil end
+               return "</p>" .. space .. "<p>" .. indent
+            end)
          else
             local sub = LibMarkdown.split(itemtext)
             sub = self:classify_lines(sub)
@@ -1187,8 +1200,30 @@ function LibMarkdown.block_transform(self, text, sublist)
    return text
 end
 
+-- puts the text just before each <img> (back to the line's start or a tag) in a paragraph of
+-- its own. It looks back from each <img>: gsub("([^<>\n]+)(<img") would try every position in
+-- the text, which is slow on a long document.
+function LibMarkdown.paragraph_before_images(text)
+   local out, pos, search = {}, 1, 1
+   while true do
+      local img = text:find("<img", search, true)
+      if not img then break end
+      local k = img - 1
+      while k >= pos do
+         local c = text:byte(k)
+         if c == 60 or c == 62 or c == 10 then break end -- < > \n
+         k = k - 1
+      end
+      table.insert(out, text:sub(pos, k))
+      if k + 1 <= img - 1 then table.insert(out, "<p>" .. text:sub(k + 1, img - 1) .. "</p>\n") end
+      pos, search = img, img + 4
+   end
+   table.insert(out, text:sub(pos))
+   return table.concat(out)
+end
+
 function LibMarkdown.last_minute_lmd_fixes(text) --
-   text = text:gsub("([^<>\n]+)(<img[^>]*>)","<p>%1</p>\n%2")
+   text = LibMarkdown.paragraph_before_images(text)
    text = text:gsub("(<img[^>]*>)([^<>]+)","%1<p>%2</p>")
    text = text:gsub("<p>(<img[^>]*>)</p>", "%1")
    text = text:gsub("<p([^>]*)>%s*<p>(.-)</p>%s*</p>", "<p%1>%2</p>")
@@ -1374,14 +1409,18 @@ function LibMarkdown.escape_special_chars(self, text)
 end
 
 -- unescape characters that have been encoded.
+-- Every escape is a hash, the hash identifier followed by digits and an x, so one pass finds
+-- them all and looks each up (rather than one pass over the text per escape). An escape can hold
+-- others, so passes repeat until the text stops changing. Hashes that aren't escapes are kept.
 function LibMarkdown.unescape_special_chars(self, t)
-   local tin = t
-   for k,v in pairs(self.escape_table) do
-      k = k:gsub("%%", "%%%%")
-      t = t:gsub(v,k)
+   local originals = {}
+   for k, v in pairs(self.escape_table) do originals[v] = k end
+   local pattern = self.hash.identifier .. "%d+x"
+   while true do
+      local before = t
+      t = t:gsub(pattern, originals)
+      if t == before then return t end
    end
-   if t ~= tin then t = self:unescape_special_chars(t) end
-   return t
 end
 
 -- encode/escape certain characters inside markdown code runs.
@@ -1722,6 +1761,14 @@ function LibMarkdown.emphasis(self, text)
       return before .. self.escape_table["_"]:rep(#run)
    end)
 
+   -- ***both*** and ___both___ get a color of their own, not em's color nested in strong's
+   for _, s in ipairs {"%*%*%*", "___"} do
+      text = text:gsub(s .. "([^%s%*_].-)" .. s, function(inner)
+         if inner:find("%s$") then return nil end
+         return self.config.strong_em .. inner .. self.config["/strong_em"]
+      end)
+   end
+
    -- ~~strikethrough~~ and ==highlight==; the text inside can't start or end with a space
    text = text:gsub("~~([^%s~].-)~~", function(inner)
       if inner:find("%s$") then return nil end
@@ -1806,20 +1853,20 @@ end
 
 -- entities and raid targeting icons
 function LibMarkdown.entities(self, text)
-   -- LMD: added this
-   for _, k in ipairs(self.entities_list)
-   do text = text:gsub("&" .. k .. ";", self.config[k])
-   end
+   -- LMD: added this. One pass each, looking the name up, rather than a pass per name.
+   local spacing = {}
+   for _, k in ipairs(self.entities_list) do spacing[k] = self.config[k] end
+   text = text:gsub("&(%w+);", spacing)
 
-   for rt, aliases in pairs(self.rt_list)
-   do text = text:gsub('{' .. rt .. '}', self.config[rt])
-      text = text:gsub('{' .. rt:upper() .. '}', self.config[rt])
-      for _, aka in ipairs(aliases)
-      do  text = text:gsub('{' .. aka .. '}', self.config[rt])
-          text = text:gsub('{' .. aka:lower() .. '}', self.config[rt])
-          text = text:gsub('{' .. aka:upper() .. '}', self.config[rt])
+   -- {rt1} {RT1} {Star} {star} {STAR}: the raid target icons
+   local icons = {}
+   for rt, aliases in pairs(self.rt_list) do
+      icons[rt], icons[rt:upper()] = self.config[rt], self.config[rt]
+      for _, aka in ipairs(aliases) do
+         icons[aka], icons[aka:lower()], icons[aka:upper()] = self.config[rt], self.config[rt], self.config[rt]
       end
    end
+   text = text:gsub("{(%w+)}", icons)
 
    text = text:gsub("&#[xX](%x+);", function(hex) return self.entity_char(tonumber(hex, 16)) end)
    text = text:gsub("&#(%d+);", function(dec) return self.entity_char(tonumber(dec)) end)
@@ -2016,11 +2063,56 @@ function LibMarkdown.markdown(self, text)
    return text
 end
 
+-- each overlay config's get_base, so a config's settings can be listed down to the library's.
+-- Kept on the library, so a newer copy still knows the renderers an older one made.
+LibMarkdown.config_bases = LibMarkdown.config_bases or setmetatable({}, { __mode = "k" })
+local config_bases = LibMarkdown.config_bases
+
 -- returns a config table holding settings, that falls back to the table get_base() returns
 local function overlay_config(get_base, settings)
    local config = setmetatable({}, { __index = function(_, k) return get_base()[k] end })
    for k, v in pairs(settings or {}) do config[k] = v end
+   config_bases[config] = get_base
    return config
+end
+
+-- a string holding every setting config has, its own and those it falls back to
+local function config_signature(config)
+   local seen, keys = {}, {}
+   local function add(t)
+      for k in pairs(t) do
+         if not seen[k] then seen[k] = true; keys[#keys + 1] = k end
+      end
+   end
+   local t = config
+   while t do
+      add(t)
+      t = config_bases[t] and config_bases[t]()
+   end
+   -- every config falls back to the library's, even one made by an older copy
+   add(LibMarkdown.config)
+   for i, k in ipairs(keys) do keys[i] = tostring(k) end
+   table.sort(keys)
+   for i, k in ipairs(keys) do keys[i] = k .. "=" .. tostring(config[k]) end
+   return table.concat(keys, "\1")
+end
+
+-- Rendered documents, by their settings and text, so showing a document again doesn't render
+-- it again. Changing any setting changes the key. A newer copy of the library starts its own.
+LibMarkdown.render_cache, LibMarkdown.render_cache_count, LibMarkdown.render_cache_limit = {}, 0, 20
+
+function LibMarkdown.cached_markdown(self, text)
+   local key = config_signature(self.config) .. "\0" .. text
+   local html = LibMarkdown.render_cache[key]
+   if not html then
+      html = self:markdown(text)
+      if LibMarkdown.render_cache_count >= LibMarkdown.render_cache_limit then
+         LibMarkdown.render_cache, LibMarkdown.render_cache_count = {}, 0
+      end
+      LibMarkdown.render_cache[key] = html
+      LibMarkdown.render_cache_count = LibMarkdown.render_cache_count + 1
+   end
+   return html
 end
 
 -- returns a renderer with its own config: settings, then the library's config for anything
@@ -2047,7 +2139,7 @@ function LibMarkdown.ToHTML(self, param, options)
      if     param_type == "string" 
      then   return self.config.html .. 
                      self.config.body .. 
-                       self:markdown(param) ..
+                       self:cached_markdown(param) ..
                      self.config["/body"] .. 
                    self.config["/html"]
      elseif param_type == "table"
@@ -2060,7 +2152,7 @@ function LibMarkdown.ToHTML(self, param, options)
                  if all_strings 
                  then return self.config.html .. 
                                self.config.body .. 
-                                 self:markdown(table.concat(param, "\n")) ..
+                                 self:cached_markdown(table.concat(param, "\n")) ..
                                self.config["/body"] .. 
                              self.config["/html"]
                  else print(ERRMESSAGE)
