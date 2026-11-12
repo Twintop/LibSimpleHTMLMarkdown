@@ -232,6 +232,10 @@ ASSERTIONS = [
     ("- a\n\n  - b\n\n    more b",
      ["|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|t" * 2 + "more b"],
      ["|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|t" * 3]),
+    # h4-h6 are body-sized lines: h4 in the strong color, h5 in strong_em's, h6 muted
+    ("#### Four {#four}\n##### Five\n###### Six",
+     ["<p>|cff00ddddFour|r</p>", "<p>|cff80ffd0Five|r</p>", "<p>|cff9d9d9dSix|r</p>"], ["<h3>", "{#"]),
+    ("### Three", ["<h3>Three</h3>"], []),
     # ***both*** has a color of its own
     ("***both*** ___too___", ["|cff80ffd0both|r |cff80ffd0too|r"], ["|cff00dddd"]),
     ("**strong *em* inside**", ["|cff00ddddstrong |cff00dd00em|r inside|r"], []),
@@ -325,6 +329,13 @@ def check_state(lua, failures):
     render(lib, "```\nnever closed")
     if "|cff66bbbb" in render(lib, "plain"):
         failures.append("state: an unclosed fence leaked into the next document")
+
+    # h4 follows the renderer's strong color, and can be shown as h3 as before
+    if "<p>|cffffcc00Four|r</p>" not in render(lib, "#### Four", lua.eval('{ strong = "|cffffcc00" }')):
+        failures.append("state: h4 didn't take the strong color from the settings")
+    as_h3 = lua.eval('{ h4 = "<h3>", ["/h4"] = "</h3><br />", h4_style = false }')
+    if "<h3>Four</h3>" not in render(lib, "#### Four", as_h3):
+        failures.append("state: h4 couldn't be set back to <h3>")
 
     # per-call options don't stick, and don't change the shared config
     options = lua.eval('{ em = "|cffff0000" }')

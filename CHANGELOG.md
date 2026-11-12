@@ -36,6 +36,11 @@ Blockquotes look like they do in other renderers: left-aligned gray text with a 
 adds its own bar, and alerts have a bar in their kind's color (`admonition_note_bar` and so on). SimpleHTML
 can't put a bar on the wrapped part of a long line.
 
+Level 4 to 6 headings are told apart from level 3 (SimpleHTML has no smaller heading styles): they're lines at
+text size, level 4 in the strong color, level 5 in the strong_em color, and level 6 in gray. The `h4`, `h5`, and
+`h6` settings (with `h4_style` and so on) change them; `h4 = "<h3>"`, `["/h4"] = "</h3><br />"`, and
+`h4_style = false` show level 4 as level 3 again.
+
 Also:
 
 - A loose list item's later paragraphs and code start indented under the item's text.

@@ -14,8 +14,9 @@ LibSimpleHTMLMarkdownShowcase = {
   { title = "Headings",
     cases = {
       { name = "ATX headings",
-        md = "# Heading 1\n## Heading 2\n### Heading 3\n#### Heading 4\n###### Heading 6",
-        expect = "Three heading styles. Levels 4 and 6 look like Heading 3." },
+        md = "# Heading 1\n## Heading 2\n### Heading 3\n#### Heading 4\n##### Heading 5\n###### Heading 6",
+        expect = "Three heading styles, then Heading 4 to 6 at text size: 4 in the strong color, " ..
+                 "5 in the ***both*** color, 6 in gray." },
       { name = "Setext headings",
         md = "Heading 1\n=========\n\nHeading 2\n---------",
         expect = "A Heading 1 and a Heading 2, no rules." },

@@ -71,9 +71,14 @@ Heading 2
 ---------
 ```
 
-These are rendered as `&lt;h1&gt;`, `&lt;h2&gt;`, and `&lt;h3&gt;` HTML tags.
-Level 4 headings and above will be converted down to `&lt;h3&gt;`. As in CommonMark, the
+These are rendered as `&lt;h1&gt;`, `&lt;h2&gt;`, and `&lt;h3&gt;` HTML tags. As in CommonMark, the
 `#`s must be followed by a space, so `#hashtag` stays text.
+
+`SimpleHTML` has no smaller heading styles and no inline font sizes, so `####` to `######`
+headings are lines at text size, set apart by color as GitHub does: level 4 in the `strong`
+color, level 5 in the `strong_em` color, and level 6 in gray. Each level has `h4`, `/h4`, and
+`h4_style` settings (and so on); `h4_style` names the setting whose color the heading takes. To
+show level 4 as `&lt;h3&gt;` instead: `h4 = "<h3>"`, `["/h4"] = "</h3><br />"`, `h4_style = false`.
 
 ```
 [Link Name](http://LinkURL)

@@ -131,6 +131,19 @@ LibMarkdown.config = {
   ['/h2'              ] = '</h2><br />',
   [ 'h3'              ] = '<h3>',
   ['/h3'              ] = '</h3><br />',
+  -- SimpleHTML has only h1-h3 and p, and no inline font sizes, so h4-h6 are body-sized lines set
+  -- apart by color, as on GitHub. hN_style names the setting whose color wraps the heading's text
+  -- (strong for h4, strong_em for h5), so they follow your palette; false for none. To show h4 as
+  -- h3 as before: h4 = "<h3>", ["/h4"] = "</h3><br />", h4_style = false.
+  [ 'h4'              ] = '<p>',
+  ['/h4'              ] = '</p><br />',
+  [ 'h4_style'        ] = 'strong',
+  [ 'h5'              ] = '<p>',
+  ['/h5'              ] = '</p><br />',
+  [ 'h5_style'        ] = 'strong_em',
+  [ 'h6'              ] = '<p>|cff9d9d9d',
+  ['/h6'              ] = '|r</p><br />',
+  [ 'h6_style'        ] = false,
   [ 'p'               ] = '<p>',
   ['/p'               ] = '</p>',
   [ 'html'            ] = '<html>',
@@ -730,9 +743,11 @@ function LibMarkdown.blocks_to_html(self, lines, no_paragraphs)
             table.insert(out, self.config["p"] .. self:span_transform(s) .. self.config["/p"])
          end
       elseif line.type == "header" then
-         local text = LibMarkdown.heading_id(line.text)
-         local s = self.config["h" .. line.level] .. self:span_transform(text) .. self.config["/h" .. line.level]
-         table.insert(out, s)
+         local text = self:span_transform((LibMarkdown.heading_id(line.text)))
+         local level = line.raw_level or line.level
+         local style = self.config["h" .. level .. "_style"]
+         if style then text = self.config[style] .. text .. self.config["/" .. style] end
+         table.insert(out, self.config["h" .. level] .. text .. self.config["/h" .. level])
       elseif line.type == "eob" then
          -- the ^ that ends a list isn't shown
       else
