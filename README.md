@@ -178,6 +178,59 @@ A footnote reference shows as a number, `[1]`, numbered in the order the text fi
 to it. The notes are listed after a rule at the end of the document. A note can go on in
 lines indented under it.
 
+### Extensions from other Markdown flavors
+
+None of these are in CommonMark or the GFM spec, but each is the syntax other renderers use:
+
+```
+> [!NOTE]
+> GitHub's alerts: [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], and [!CAUTION].
+
+Term
+: A definition (PHP Markdown Extra, Pandoc)
+
+==Highlighted==, x^2^, and H~2~O (Pandoc, markdown-it)
+
+## Setup {#setup}
+[Jump to setup](#setup)
+```
+
+- An alert is shown as its kind's icon and title, then its text. The titles are config keys
+  (`admonition_note` and so on), so they can be translated.
+- A definition list shows each term in its own color, with its definitions indented under it.
+- `SimpleHTML` can't color a background, so highlighted text is colored instead.
+- Superscripts and subscripts use the Unicode characters for digits, `+ - = ( )`, and (in a
+  superscript) `n` and `i`. Anything else is shown dimmed. Set `script_glyphs` to `false` to
+  always dim them.
+- A heading's `{#id}` isn't shown. `SimpleHTML` can't scroll to a heading, so a `[link](#id)` is
+  handed to your hyperlink handler as `#id`. `:GetHeadings(text)` lists a document's headings
+  (`level`, `text`, and `id`, which is the `{#id}` or a GitHub-style id from the text), for a
+  table of contents or for acting on those links.
+
+### WoW extensions
+
+```
+![](atlas:groupfinder-icon-role-large-tank)
+![](atlas:groupfinder-icon-role-large-tank 32x32)
+
+:check: :x: :question: :warning: :gold: :silver: :copper: :tank: :healer: :dps:
+
+[Fireball](spell:133) [Hearthstone](item:6948) [Level 10](achievement:6)
+```
+
+- An `atlas:` image is an atlas, shown inside the line (`<img>` only takes texture files). Without
+  a size it's as tall as the text.
+- A `:shortcode:` with a config entry under that key is replaced by it. Add your own, such as
+  `[":myicon:"] = "|TInterface\\ICONS\\X:0|t"`. Unknown shortcodes are shown as typed, and
+  `\:check:` is shown as `:check:`.
+- Game links are ordinary links. To show the game's tooltip for `spell:`, `item:`, `currency:`,
+  and `achievement:` links, use the library's helpers in your frame's hyperlink scripts:
+
+```
+html:SetScript("OnHyperlinkEnter", function(self, link) LSHM:ShowLinkTooltip(self, link) end)
+html:SetScript("OnHyperlinkLeave", function() LSHM:HideLinkTooltip() end)
+```
+
 ```
 ![Alt Text](Interface\\ICONS\\ABILITY_SAP.PNG)
 ![Alt Text](Interface\\ICONS\\ABILITY_SAP.PNG "Sap Icon" 64x64 right)
@@ -388,5 +441,7 @@ LibSimpleHTMLMarkdown 1.0 minor 1 starts from LibMarkdown-1.0 minor 9, the last 
 
 - Nested lists, task lists, GFM tables, `~~strikethrough~~`, bare url links, footnotes, `~~~`
   fences, shortcut references, and backslash line breaks.
+- Alerts, definition lists, highlight, superscript and subscript, and heading ids, from other
+  Markdown flavors; atlases, shortcodes, and game link tooltips for WoW.
 - `:ToHTML(text, settings)` and `:New(settings)`, so an AddOn's settings don't change the
   shared config.

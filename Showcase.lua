@@ -186,6 +186,45 @@ LibSimpleHTMLMarkdownShowcase = {
         expect = "Orange text, a question mark icon, and a tank role icon." },
     } },
 
+  { title = "Extensions from other Markdown flavors",
+    cases = {
+      { name = "Alerts",
+        md = "> [!NOTE]\n> Useful to know.\n\n> [!TIP]\n> Helpful advice.\n\n> [!IMPORTANT]\n> Key information.\n\n" ..
+             "> [!WARNING]\n> Needs **attention** now.\n\n> [!CAUTION]\n> Could go wrong.",
+        expect = "Five blocks, each with an icon and a colored title (Note, Tip, Important, Warning, Caution), " ..
+                 "then its text. Not centered or in quote marks like a blockquote." },
+      { name = "Definition lists",
+        md = "Insanity\n: The resource Shadow Priests build.\n: Spent by Devouring Plague.\nVoidform\n: An older mechanic.",
+        expect = "\"Insanity\" in the strong color with two indented definitions under it, then \"Voidform\" with one." },
+      { name = "Highlight",
+        md = "Remember to ==renew your buffs== before the pull.",
+        expect = "\"renew your buffs\" in yellow; SimpleHTML can't color a background." },
+      { name = "Superscript and subscript",
+        md = "x^2^, x^(n+1)^, H~2~O, and the 4^th^ boss.",
+        expect = "x², x⁽ⁿ⁺¹⁾, H₂O as Unicode characters, then \"th\" dimmed (there's no superscript t or h). " ..
+                 "A box means the font has no glyph for that character." },
+      { name = "Heading anchors",
+        md = "### Rotation {#rotation}\n\n[Back to the rotation](#rotation)",
+        expect = "A \"Rotation\" heading, without its {#rotation}. Clicking the link prints the heading it points to, " ..
+                 "found with :GetHeadings()." },
+    } },
+
+  { title = "WoW extensions",
+    cases = {
+      { name = "Atlas images",
+        md = "Roles: ![](atlas:groupfinder-icon-role-large-tank) ![](atlas:groupfinder-icon-role-large-heal) " ..
+             "![](atlas:groupfinder-icon-role-large-dps), and a bigger one: ![](atlas:groupfinder-icon-role-large-tank 32x32)",
+        expect = "Tank, healer, and damage role icons in the line, then a larger tank icon. They don't break the line." },
+      { name = "Shortcodes",
+        md = ":check: done, :x: not done, :question: unknown, :warning: careful. " ..
+             "Costs 1:gold: 50:silver: 25:copper:. :tank: :healer: :dps: :unknown: stays as typed, as does 10:30:45.",
+        expect = "Check, cross, question mark, and alert icons; gold, silver, and copper coins; the three role icons. " ..
+                 ":unknown: and 10:30:45 as typed." },
+      { name = "Game links",
+        md = "[Fireball](spell:133), [Hearthstone](item:6948), and [Level 10](achievement:6).",
+        expect = "Three links. Hovering one shows the game's tooltip for it (ShowLinkTooltip)." },
+    } },
+
   { title = "Options",
     cases = {
       { name = "Per-call options",
@@ -292,12 +331,28 @@ frame:SetScript("OnShow", function(self) self:ShowPage(self.page) end)
 frame.html:SetScript("OnHyperlinkClick", function(_, link, text)
   if link == "showcase:next" then
     frame:ShowPage(frame.page + 1)
+  elseif link:match("^#") then
+    -- SimpleHTML can't scroll to a heading; a real handler could switch tabs or pages here
+    for _, section in ipairs(LibSimpleHTMLMarkdownShowcase) do
+      for _, case in ipairs(section.cases) do
+        for _, heading in ipairs(LSHM:GetHeadings(case.md)) do
+          if "#" .. heading.id == link then
+            print(("[LibSimpleHTMLMarkdown showcase] %s points to the level %d heading \"%s\" in \"%s\"")
+                  :format(link, heading.level, heading.text, case.name))
+          end
+        end
+      end
+    end
   elseif link:match("^https?://") or link:match("^mailto:") then
     StaticPopup_Show("LIBSIMPLEHTMLMARKDOWN_SHOWCASE_URL", text, nil, { url = link })
   else
     print("[LibSimpleHTMLMarkdown showcase] clicked link:", link)
   end
 end)
+
+-- game links ([Fireball](spell:133)) show the game's tooltip
+frame.html:SetScript("OnHyperlinkEnter", function(self, link) LSHM:ShowLinkTooltip(self, link) end)
+frame.html:SetScript("OnHyperlinkLeave", function() LSHM:HideLinkTooltip() end)
 
 StaticPopupDialogs["LIBSIMPLEHTMLMARKDOWN_SHOWCASE_URL"] = {
   text = "Link: %s", wide = true, closeButton = true, hasEditBox = true, hideOnEscape = true, timeout = 60,

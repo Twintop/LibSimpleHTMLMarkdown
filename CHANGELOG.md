@@ -3,6 +3,28 @@
 Releases are numbered `<major>.0.<minor>` after the LibStub version they register, so 1.0.1 is
 `LibSimpleHTMLMarkdown-1.0` minor 1. Each release's upload changelog is its own section below.
 
+## 1.0.4
+
+Syntax from other Markdown flavors (not in CommonMark or GFM, but what other renderers use):
+
+- GitHub's alerts: a quote starting `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]` shows
+  an icon and a colored title, then its text.
+- Definition lists: a term line, then `: definition` lines.
+- `==Highlight==`, shown in a color, and `x^2^` / `H~2~O`, shown with Unicode superscript and subscript
+  characters (`script_glyphs`).
+- Heading ids: `## Setup {#setup}` hides the id, and `:GetHeadings(text)` lists every heading's level, text,
+  and id, for a table of contents or for handling `[links](#setup)`.
+
+WoW extensions:
+
+- Atlases: `![](atlas:name)` or `![](atlas:name 32x32)` is shown in the line.
+- Shortcodes: `:check:`, `:x:`, `:question:`, `:warning:`, `:gold:`, `:silver:`, `:copper:`, `:tank:`,
+  `:healer:`, and `:dps:` become icons. Add your own as config keys, like `[":myicon:"]`.
+- `:ShowLinkTooltip(owner, link)` and `:HideLinkTooltip()` show the game's tooltip for links such as
+  `[Fireball](spell:133)` from a frame's hyperlink scripts.
+
+`\^`, `\=`, and `\:` are backslash escapes, for text these would otherwise change.
+
 ## 1.0.3
 
 New Markdown support:

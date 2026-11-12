@@ -3,7 +3,7 @@
 -- lua implementation of markdown originally from https://github.com/mpeterv/markdown
 
 local  MARKDOWN10 = "LibSimpleHTMLMarkdown-1.0"
-local  MARKDOWN10_MINOR = 3
+local  MARKDOWN10_MINOR = 4
 if not LibStub then error(MARKDOWN10 .. " requires LibStub.") end
 local  LibMarkdown = LibStub:NewLibrary(MARKDOWN10, MARKDOWN10_MINOR)
 if not LibMarkdown then return end
@@ -35,6 +35,43 @@ LibMarkdown.config = {
   ['/em'              ] = '|r',
   [ 'del'             ] = '|cff808080', -- ~~strikethrough~~; SimpleHTML can't strike text, so it's dimmed
   ['/del'             ] = '|r',
+  [ 'mark'            ] = '|cffffff66', -- ==highlight==; SimpleHTML can't color a background, so the text is colored
+  ['/mark'            ] = '|r',
+  -- ^sup^ and ~sub~ use Unicode superscript and subscript characters when there's one for every
+  -- character (digits, + - = ( ), and for sup n and i); otherwise the text is shown in these colors
+  ['script_glyphs'    ] = true,
+  [ 'sup'             ] = '|cffb0b0b0',
+  ['/sup'             ] = '|r',
+  [ 'sub'             ] = '|cffb0b0b0',
+  ['/sub'             ] = '|r',
+  -- Term / : definition (definition lists)
+  [ 'dl'              ] = '<p>',
+  ['/dl'              ] = '</p><br />',
+  [ 'dt'              ] = '|cff00dddd',
+  ['/dt'              ] = '|r<br />',
+  [ 'dd'              ] = '|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|t',
+  ['/dd'              ] = '<br />',
+  -- > [!NOTE] and the other GitHub alerts: the block, then each kind's title line
+  [ 'admonition'      ] = '<p>',
+  ['/admonition'      ] = '</p><br />',
+  ['admonition_note'      ] = '|TInterface\\FriendsFrame\\InformationIcon:0|t |cff4493f8Note|r',
+  ['admonition_tip'       ] = '|TInterface\\Common\\help-i:0|t |cff3fb950Tip|r',
+  ['admonition_important' ] = '|TInterface\\GossipFrame\\AvailableQuestIcon:0|t |cffab7df8Important|r',
+  ['admonition_warning'   ] = '|TInterface\\DialogFrame\\UI-Dialog-Icon-AlertNew:0|t |cffd29922Warning|r',
+  ['admonition_caution'   ] = '|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t |cfff85149Caution|r',
+  -- :shortcode: icons. Add your own with any key in this form.
+  [':check:'          ] = '|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t',
+  [':white_check_mark:'] = '|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t', -- GitHub's names for it
+  [':heavy_check_mark:'] = '|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t',
+  [':x:'              ] = '|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t',
+  [':question:'       ] = '|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t',
+  [':warning:'        ] = '|TInterface\\DialogFrame\\UI-Dialog-Icon-AlertNew:0|t',
+  [':gold:'           ] = '|TInterface\\MoneyFrame\\UI-GoldIcon:0|t',
+  [':silver:'         ] = '|TInterface\\MoneyFrame\\UI-SilverIcon:0|t',
+  [':copper:'         ] = '|TInterface\\MoneyFrame\\UI-CopperIcon:0|t',
+  [':tank:'           ] = '|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:0:0:0:0:64:64:0:19:22:41|t',
+  [':healer:'         ] = '|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:0:0:0:0:64:64:20:39:1:20|t',
+  [':dps:'            ] = '|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:0:0:0:0:64:64:20:39:22:41|t',
   [ 'ul'              ] = '<p>',
   ['/ul'              ] = '</p><br />',  -- it's almost always the right right choice to put <br /> after a block level tag
   [ 'ol'              ] = '<p>',
@@ -495,6 +532,7 @@ function LibMarkdown.classify(self, line)
       if text:match("^#+$") then text = "" end
       info.type = "header"
       info.level = math.min(hashes:len(), 3)
+      info.raw_level = math.min(hashes:len(), 6)
       info.text = text
       return info
    end
@@ -547,6 +585,13 @@ function LibMarkdown.classify(self, line)
       return info
    end
 
+   -- ": text" under a term line defines it (definition lists, as in PHP Markdown Extra and Pandoc)
+   if line:match("^ ? ? ?:[ \t]+%S") then
+      info.type = "definition"
+      info.text = line:match("^ ? ? ?:[ \t]+(.-)%s*$")
+      return info
+   end
+
    if self:is_protected(line) then
       info.type = "raw"
       info.html = self:unprotect(line)
@@ -573,6 +618,44 @@ function LibMarkdown.classify_lines(self, lines)
       out[i] = info
    end
    self.fence = nil
+   return out
+end
+
+-- returns a heading's text without a trailing {#id}, and the id (nil if there isn't one).
+-- SimpleHTML can't scroll to a heading, so the id isn't in the html: a [link](#id) passes "#id"
+-- to the frame's hyperlink handler, and :GetHeadings() lists each heading's id.
+function LibMarkdown.heading_id(text)
+   local before, id = text:match("^(.-)%s*{#([%w_%-%.:]+)}%s*$")
+   if before then return before, id end
+   return text
+end
+
+-- a GitHub-style id for a heading: lowercase, punctuation removed, spaces as hyphens
+function LibMarkdown.heading_slug(text)
+   local s = text:gsub("%[(.-)%]%b()", "%1"):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+   return (s:lower():gsub("[^%w%s%-_\128-\255]", ""):gsub("%s", "-"))
+end
+
+-- returns the document's headings in order, outside lists and quotes, as tables of level (1 to
+-- 6, as written), text (the markdown, without its {#id}), and id: its {#id}, or a slug made from
+-- its text, numbered -1, -2, ... where two would be the same. Use it to build a table of contents,
+-- or to act on a [link](#id) in a hyperlink handler.
+function LibMarkdown.GetHeadings(self, text)
+   if type(text) == "table" then text = table.concat(text, "\n") end
+   local lines = LibMarkdown.split(self:cleanup(text or ""))
+   lines = self:headers(self:classify_lines(lines))
+   local out, used = {}, {}
+   for _, line in ipairs(lines) do
+      if line.type == "header" then
+         local heading, id = LibMarkdown.heading_id(line.text)
+         if not id then
+            local slug = LibMarkdown.heading_slug(heading)
+            id, used[slug] = slug, (used[slug] or -1) + 1
+            if used[slug] > 0 then id = slug .. "-" .. used[slug] end
+         end
+         table.insert(out, { level = line.raw_level or line.level, text = heading, id = id })
+      end
+   end
    return out
 end
 
@@ -605,6 +688,10 @@ end
 function LibMarkdown.blocks_to_html(self, lines, no_paragraphs)
    local out = {}
    local i = 1
+   -- a ": definition" line that didn't follow a term is text
+   for _, line in ipairs(lines) do
+      if line.type == "definition" then line.type = "normal" end
+   end
    while i <= #lines do
       local line = lines[i]
       if line.type == "ruler" then
@@ -625,7 +712,8 @@ function LibMarkdown.blocks_to_html(self, lines, no_paragraphs)
             table.insert(out, self.config["p"] .. self:span_transform(s) .. self.config["/p"])
          end
       elseif line.type == "header" then
-         local s = self.config["h" .. line.level] .. self:span_transform(line.text) .. self.config["/h" .. line.level]
+         local text = LibMarkdown.heading_id(line.text)
+         local s = self.config["h" .. line.level] .. self:span_transform(text) .. self.config["/h" .. line.level]
          table.insert(out, s)
       elseif line.type == "eob" then
          -- the ^ that ends a list isn't shown
@@ -874,16 +962,15 @@ function LibMarkdown.blockquotes(self, lines)
       end
       if not start then return nil end
 
+      -- a quote goes on through its > lines (a line of just > is an empty line in it) and text
+      -- lines right after them. A blank line ends it, so two quotes with a blank line between
+      -- them are two quotes.
       local stop = #lines
       for i = start+1, #lines do
-         if lines[i].type == "blank" or lines[i].type == "blockquote" then
-         elseif lines[i].type == "normal" then
-            if lines[i-1].type == "blank" then stop = i-1 break end
-         else
+         if lines[i].type ~= "blockquote" and lines[i].type ~= "normal" then
             stop = i-1 break
          end
       end
-      while lines[stop].type == "blank" do stop = stop - 1 end
       return start, stop
    end
 
@@ -893,6 +980,13 @@ function LibMarkdown.blockquotes(self, lines)
       local texts = {}
       for i, line in ipairs(lines) do texts[i] = self:escape_special_chars(line.text) end
       local depth = self.quote_depth or 0
+
+      -- GitHub's alerts: a quote whose first line is [!NOTE], [!TIP], [!IMPORTANT], [!WARNING],
+      -- or [!CAUTION] is shown as that kind's title line (an icon and a name), then its text
+      local kind = depth == 0 and texts[1]:match("^%[!(%a+)%]%s*$")
+      local title = kind and self.config["admonition_" .. kind:lower()]
+      if title then table.remove(texts, 1) end
+
       self.quote_depth = depth + 1
       local bt = self:block_transform(table.concat(texts, "\n"))
       self.quote_depth = depth
@@ -904,6 +998,10 @@ function LibMarkdown.blockquotes(self, lines)
       end)
       bt = bt:gsub("</p>%s*<p[^>]*>", "<br />" .. self.config.nbsp .. "<br />")
       bt = LibMarkdown.strip_paragraph_tags(bt)
+
+      if title then
+         return self.config.admonition .. title .. self.config.br .. bt .. self.config["/admonition"]
+      end
 
       -- a quote inside a quote is part of the outer one, in its own lines and color
       if depth > 0 then
@@ -1048,6 +1146,30 @@ function LibMarkdown.tables(self, lines)
    return lines
 end
 
+-- find definition lists, a term line followed by one or more ": definition" lines, and convert
+-- each to raw html: the term in its own color, then each definition indented on its own line.
+-- Terms and definitions that follow without a blank line between are part of the same list.
+function LibMarkdown.definitions(self, lines)
+   local i = 1
+   while i < #lines do
+      if lines[i].type == "normal" and lines[i+1].type == "definition" then
+         local stop, parts = i, {}
+         while lines[stop] and lines[stop].type == "normal" and lines[stop+1] and lines[stop+1].type == "definition" do
+            table.insert(parts, self.config.dt .. self:span_transform(lines[stop].line) .. self.config["/dt"])
+            stop = stop + 1
+            while lines[stop] and lines[stop].type == "definition" do
+               table.insert(parts, self.config.dd .. self:span_transform(lines[stop].text) .. self.config["/dd"])
+               stop = stop + 1
+            end
+         end
+         local text = self.config.dl .. table.concat(parts, "\n") .. self.config["/dl"]
+         lines = LibMarkdown.splice(lines, i, stop - 1, { { line = text, type = "raw", html = text } })
+      end
+      i = i + 1
+   end
+   return lines
+end
+
 -- perform all the block level transforms
 function LibMarkdown.block_transform(self, text, sublist)
    local lines = LibMarkdown.split(text)
@@ -1057,6 +1179,7 @@ function LibMarkdown.block_transform(self, text, sublist)
    lines = self:lists(lines, sublist)
    lines = self:codeblocks(lines)
    lines = self:blockquotes(lines)
+   lines = self:definitions(lines)
    lines = self:blocks_to_html(lines)
 
    local text = table.concat(lines, "\n")
@@ -1203,7 +1326,7 @@ end
 
 -- these characters may need to be escaped because they have a special
 -- meaning in markdown.
-LibMarkdown.escape_chars = "'\\`*_{}[]()>#+-.!~'"
+LibMarkdown.escape_chars = "'\\`*_{}[]()>#+-.!~^=:'"
 LibMarkdown.escape_table = {}
 
 function LibMarkdown.init_escape_table(self)
@@ -1331,12 +1454,22 @@ function LibMarkdown.link_destination(link)
    return url, title
 end
 
+-- an atlas image, ![](atlas:name) or ![](atlas:name 16x16), is shown in the line as a |A escape:
+-- SimpleHTML's <img> only takes texture files. Without a size, it's as tall as the text.
+function LibMarkdown.atlas(self, url, width, height)
+   local name = url:match("^atlas:(.+)$")
+   if not name then return nil end
+   return self:add_escape("|A:" .. name .. ":" .. (height or 0) .. ":" .. (width or 0) .. "|a")
+end
+
 function LibMarkdown.images(self, text)
    local function image(label, id)
       id = (id or ""):lower()
       if id == "" then id = label:lower() end
       local link = self.link_database[id]
       if not (link and link.url) then return nil end
+      local atlas = self:atlas(link.url)
+      if atlas then return atlas end
       -- lmd: simplehtml doesn't support alt text or titles
       return self:add_escape('<img src="' .. self:encode_alt(link.url) ..  '" />')
    end
@@ -1357,6 +1490,10 @@ function LibMarkdown.images(self, text)
       local inner = link:sub(2, -2):match("^%s*(.-)%s*$")
       local url = inner:match("^<(.-)>") or inner:match("^(%S+)")
       local title = inner:match('%s"(.-)"') or inner:match("%s'(.-)'")
+      if url and url:match("^atlas:") then
+         local width, height = link:match(' (%d+)[x,./: -]+(%d+)')
+         return self:atlas(url, width, height)
+      end
       url = self:encode_alt(url)
 
       local attrs = {}
@@ -1560,6 +1697,24 @@ function LibMarkdown.amps_and_angles(self, s)
    return s
 end
 
+-- the Unicode superscript and subscript forms of the characters that have one
+LibMarkdown.superscripts = {
+   ["0"] = "⁰", ["1"] = "¹", ["2"] = "²", ["3"] = "³", ["4"] = "⁴", ["5"] = "⁵", ["6"] = "⁶", ["7"] = "⁷",
+   ["8"] = "⁸", ["9"] = "⁹", ["+"] = "⁺", ["-"] = "⁻", ["="] = "⁼", ["("] = "⁽", [")"] = "⁾", n = "ⁿ", i = "ⁱ",
+}
+LibMarkdown.subscripts = {
+   ["0"] = "₀", ["1"] = "₁", ["2"] = "₂", ["3"] = "₃", ["4"] = "₄", ["5"] = "₅", ["6"] = "₆", ["7"] = "₇",
+   ["8"] = "₈", ["9"] = "₉", ["+"] = "₊", ["-"] = "₋", ["="] = "₌", ["("] = "₍", [")"] = "₎",
+}
+
+-- replaces each :name: that has a config[":name:"] entry with it, such as :check: or :gold:
+function LibMarkdown.shortcodes(self, text)
+   return (text:gsub(":([%w_%+%-]+):", function(name)
+      local icon = self.config[":" .. name .. ":"]
+      if icon then return self:add_escape(icon) end
+   end))
+end
+
 -- handles emphasis markers (* and _) in the text.
 function LibMarkdown.emphasis(self, text)
    -- _ between two letters or digits is literal, so snake_case_names stay as they are
@@ -1567,11 +1722,29 @@ function LibMarkdown.emphasis(self, text)
       return before .. self.escape_table["_"]:rep(#run)
    end)
 
-   -- ~~strikethrough~~; the text inside can't start or end with a space
+   -- ~~strikethrough~~ and ==highlight==; the text inside can't start or end with a space
    text = text:gsub("~~([^%s~].-)~~", function(inner)
       if inner:find("%s$") then return nil end
       return self.config.del .. inner .. self.config["/del"]
    end)
+   text = text:gsub("==([^%s=].-)==", function(inner)
+      if inner:find("%s$") then return nil end
+      return self.config.mark .. inner .. self.config["/mark"]
+   end)
+
+   -- ^superscript^ and ~subscript~ (as in Pandoc), without spaces inside
+   local function script(kind, glyphs)
+      return function(inner)
+         -- ASCII ranges, not %w, which can match bytes of UTF-8 characters in some locales
+         if self.config.script_glyphs then
+            local out = inner:gsub("[0-9A-Za-z%+%-=%(%)]", glyphs)
+            if not out:find("[0-9A-Za-z%+%-=%(%)]") then return out end
+         end
+         return self.config[kind] .. inner .. self.config["/" .. kind]
+      end
+   end
+   text = text:gsub("%^([^%s%^]+)%^", script("sup", LibMarkdown.superscripts))
+   text = text:gsub("~([^%s~]+)~", script("sub", LibMarkdown.subscripts))
 
    for _, s in ipairs {"%*%*", "%_%_"} do
       text = text:gsub(s .. "([^%s%*%_])" .. s, self.config.strong .. "%1" .. self.config["/strong"])
@@ -1679,6 +1852,7 @@ function LibMarkdown.span_transform(self, text)
    text = self:anchors(text)
    text = self:auto_links(text)
    text = self:bare_links(text)
+   text = self:shortcodes(text)
    text = self:amps_and_angles(text)
    text = self:emphasis(text)
    text = self:line_breaks(text)
@@ -1825,6 +1999,7 @@ function LibMarkdown.markdown(self, text)
    self.pd.blocks = {}
    self.fence = nil
    self.list_depth = 0
+   self.quote_depth = 0
 
    text = self:cleanup(text)
    text = self:protect(text)
@@ -1895,6 +2070,32 @@ function LibMarkdown.ToHTML(self, param, options)
           return ""
      end
   end
+
+-- Game links are ordinary links to a game link: [Fireball](spell:133), [Hearthstone](item:6948),
+-- [Honor](currency:1792), or [Level 10](achievement:6). SimpleHTML hands the link ("spell:133")
+-- to the frame's hyperlink scripts, and these show the game's tooltip for it:
+--   html:SetScript("OnHyperlinkEnter", function(self, link) LSHM:ShowLinkTooltip(self, link) end)
+--   html:SetScript("OnHyperlinkLeave", function() LSHM:HideLinkTooltip() end)
+LibMarkdown.game_link_types = { spell = true, item = true, currency = true, achievement = true }
+
+-- shows the tooltip for a game link next to owner; returns true if link is one
+function LibMarkdown.ShowLinkTooltip(_, owner, link)
+   local kind, id = (link or ""):match("^(%a+):(%d+)")
+   if not (kind and LibMarkdown.game_link_types[kind] and GameTooltip) then return false end
+   -- an achievement's tooltip needs its full link, with the player's progress
+   if kind == "achievement" and GetAchievementLink then
+      local full = GetAchievementLink(tonumber(id))
+      link = full and full:match("|H(.-)|h") or link
+   end
+   GameTooltip:SetOwner(owner, "ANCHOR_CURSOR")
+   local ok = pcall(GameTooltip.SetHyperlink, GameTooltip, link)
+   if ok then GameTooltip:Show() else GameTooltip:Hide() end
+   return ok
+end
+
+function LibMarkdown.HideLinkTooltip()
+   if GameTooltip then GameTooltip:Hide() end
+end
 
 function LibMarkdown.ShowConfig(self)
     -- a renderer from :New() lists the library's keys as well as its own

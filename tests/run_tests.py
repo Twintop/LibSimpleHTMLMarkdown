@@ -175,7 +175,48 @@ ASSERTIONS = [
     ("iv. four\nv. five", [" iv.", " v."], []),
     # ordered items keep the delimiter typed
     ("1) one\n2) two", [" 1)", " 2)"], [" 1."]),
+    # heading anchors: {#id} isn't shown; #id links pass through
+    ("## Setup {#setup}\n\n[jump](#setup)", ["<h2>Setup</h2>", '<a href="#setup">jump</a>'], ["{#"]),
+    ("Text {#not-a-heading}", ["{#not-a-heading}"], []),
+    # GitHub alerts; an unknown kind stays a blockquote
+    ("> [!WARNING]\n> Careful.", ["UI-Dialog-Icon-AlertNew:0|t |cffd29922Warning|r<br />Careful.</p>"], ["[!WARNING]", '"']),
+    ("> [!bogus]\n> x", ['|cffbbbb00"[!bogus]'], []),
+    # a blank line ends a quote, so each alert is its own block; a > line alone continues one
+    ("> [!NOTE]\n> a\n\n> [!TIP]\n> b", ["|cff4493f8Note|r<br />a</p>", "|cff3fb950Tip|r<br />b</p>"], ["[!TIP]"]),
+    ("> one\n\n> two", ['"one"|r', '"two"|r'], []),
+    ("> one\n>\n> two", ['"one<br />'], ['"two"']),
+    # definition lists; a ": " line without a term is text
+    ("Term\n: One\n: Two", ["|cff00ddddTerm|r<br />", "|tOne<br />", "|tTwo<br />"], ["<p>: "]),
+    (": alone", ["<p>: alone</p>"], []),
+    # highlight, superscript and subscript
+    ("==hi==", ["|cffffff66hi|r"], ["=="]),
+    ("a == b == c", ["a == b == c"], []),
+    ("x^2^ H~2~O x^(n+1)^", ["x²", "H₂O", "x⁽ⁿ⁺¹⁾"], ["^", "~"]),
+    ("4^th^", ["4|cffb0b0b0th|r"], []),
+    ("\\^x\\^ \\==y\\==", ["^x^", "==y=="], ["|cff"]),
+    ("~~strike~~ and ~sub~", ["|cff808080strike|r", "|cffb0b0b0sub|r"], []),
+    # atlases are inline |A escapes, not <img> blocks
+    ("a ![](atlas:groupfinder-icon-role-large-tank) b ![](atlas:x 16x20)",
+     ["a |A:groupfinder-icon-role-large-tank:0:0|a b |A:x:20:16|a"], ["<img"]),
+    ("![t][a]\n\n[a]: atlas:x", ["|A:x:0:0|a"], ["<img"]),
+    # shortcodes; unknown ones, times, and escaped ones stay as typed
+    (":check: :gold: :nope: 10:30:45 \\:check:",
+     ["ReadyCheck-Ready:0|t", "UI-GoldIcon:0|t", ":nope:", "10:30:45", " :check:"], []),
+    ("`:check:`", [":check:"], ["ReadyCheck"]),
+    # game links are ordinary links
+    ("[Fireball](spell:133)", ['<a href="spell:133">Fireball</a>'], []),
 ]
+
+
+def check_headings(lua, failures):
+    lib = lua.eval('(LibStub("LibSimpleHTMLMarkdown-1.0"))')
+    headings = lua.eval('function(l, s) local o = {} for _, h in ipairs(l:GetHeadings(s)) do '
+                        'o[#o + 1] = h.level .. ":" .. h.id .. "=" .. h.text end return table.concat(o, " | ") end')
+    got = headings(lib, "# Intro\n## Setup {#custom}\n## Intro\n#### Deep **one**\nSetext\n---\n"
+                        "```\n# not a heading\n```\n- # in a list")
+    want = "1:intro=Intro | 2:custom=Setup | 2:intro-1=Intro | 4:deep-one=Deep **one** | 2:setext=Setext"
+    if got != want:
+        failures.append("GetHeadings: got %r, want %r" % (got, want))
 
 
 def check_upgrade(failures):
@@ -293,6 +334,7 @@ def main():
 
     check_state(lua, failures)
     check_upgrade(failures)
+    check_headings(lua, failures)
 
     if update:
         print("updated %d golden files" % written)
