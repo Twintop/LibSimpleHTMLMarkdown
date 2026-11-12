@@ -1537,10 +1537,45 @@ end
 
 -- an atlas image, ![](atlas:name) or ![](atlas:name 16x16), is shown in the line as a |A escape:
 -- SimpleHTML's <img> only takes texture files. Without a size, it's as tall as the text.
-function LibMarkdown.atlas(self, url, width, height)
-   local name = url:match("^atlas:(.+)$")
-   if not name then return nil end
-   return self:add_escape("|A:" .. name .. ":" .. (height or 0) .. ":" .. (width or 0) .. "|a")
+LibMarkdown.unknown_icon = "Interface\\ICONS\\INV_Misc_QuestionMark"
+
+-- the icon (a file id or texture path) of a spell, item, currency, or achievement, using the
+-- client's API; the question mark icon if there isn't one, or outside the game
+function LibMarkdown.game_icon(kind, id)
+   id = tonumber(id)
+   local ok, icon = pcall(function()
+      if kind == "spell" then
+         if C_Spell and C_Spell.GetSpellTexture then return C_Spell.GetSpellTexture(id) end
+         return GetSpellTexture and GetSpellTexture(id)
+      elseif kind == "item" then
+         if C_Item and C_Item.GetItemIconByID then return C_Item.GetItemIconByID(id) end
+         return GetItemIcon and GetItemIcon(id)
+      elseif kind == "currency" then
+         local info = C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo and C_CurrencyInfo.GetCurrencyInfo(id)
+         return info and info.iconFileID
+      elseif kind == "achievement" then
+         return GetAchievementInfo and select(10, GetAchievementInfo(id))
+      end
+   end)
+   return ok and icon or LibMarkdown.unknown_icon
+end
+
+-- An image that is shown inside the line instead of as a block of its own (SimpleHTML's <img> is
+-- always a block), or nil for one that isn't:
+--   ![](atlas:name 16x16)            an atlas, as |A
+--   ![](spell:133 16x16)             the icon of a spell, item, currency, or achievement, as |T
+--   ![](Interface\ICONS\X 16x16 inline)  a texture, marked inline, as |T
+-- Without a size, it's as tall as the text.
+function LibMarkdown.inline_image(self, url, width, height, inline)
+   if not url then return nil end
+   local w, h = width or 0, height or 0
+   local atlas = url:match("^atlas:(.+)$")
+   if atlas then return self:add_escape("|A:" .. atlas .. ":" .. h .. ":" .. w .. "|a") end
+   local kind, id = url:match("^(%a+):(%d+)$")
+   if kind and LibMarkdown.game_link_types[kind] then
+      return self:add_escape("|T" .. LibMarkdown.game_icon(kind, id) .. ":" .. h .. ":" .. w .. "|t")
+   end
+   if inline then return self:add_escape("|T" .. url .. ":" .. h .. ":" .. w .. "|t") end
 end
 
 function LibMarkdown.images(self, text)
@@ -1549,8 +1584,8 @@ function LibMarkdown.images(self, text)
       if id == "" then id = label:lower() end
       local link = self.link_database[id]
       if not (link and link.url) then return nil end
-      local atlas = self:atlas(link.url)
-      if atlas then return atlas end
+      local inline = self:inline_image(link.url)
+      if inline then return inline end
       -- lmd: simplehtml doesn't support alt text or titles
       return self:add_escape('<img src="' .. self:encode_alt(link.url) ..  '" />')
    end
@@ -1571,10 +1606,9 @@ function LibMarkdown.images(self, text)
       local inner = link:sub(2, -2):match("^%s*(.-)%s*$")
       local url = inner:match("^<(.-)>") or inner:match("^(%S+)")
       local title = inner:match('%s"(.-)"') or inner:match("%s'(.-)'")
-      if url and url:match("^atlas:") then
-         local width, height = link:match(' (%d+)[x,./: -]+(%d+)')
-         return self:atlas(url, width, height)
-      end
+      local width, height = link:match(' (%d+)[x,./: -]+(%d+)')
+      local inline = self:inline_image(url, width, height, (" " .. inner .. " "):find("%sinline%s"))
+      if inline then return inline end
       url = self:encode_alt(url)
 
       local attrs = {}
@@ -2178,32 +2212,47 @@ function LibMarkdown.ToHTML(self, param, options)
         self = setmetatable({ config = overlay_config(function() return base end, options) }, { __index = self })
      end
 
-     if     param_type == "string" 
-     then   return self.config.html .. 
-                     self.config.body .. 
-                       self:cached_markdown(param) ..
-                     self.config["/body"] .. 
-                   self.config["/html"]
-     elseif param_type == "table"
-            then local all_strings = true
-
-                 for _, item in ipairs(param)
-                 do if type(item) ~= "string" then all_strings = false break end
-                 end
-
-                 if all_strings 
-                 then return self.config.html .. 
-                               self.config.body .. 
-                                 self:cached_markdown(table.concat(param, "\n")) ..
-                               self.config["/body"] .. 
-                             self.config["/html"]
-                 else print(ERRMESSAGE)
-                      return ""
-                 end
-     else print(ERRMESSAGE)
-          return ""
+     local text
+     if param_type == "string" then
+        text = param
+     elseif param_type == "table" then
+        for _, item in ipairs(param) do
+           if type(item) ~= "string" then print(ERRMESSAGE) return "" end
+        end
+        text = table.concat(param, "\n")
+     else
+        print(ERRMESSAGE)
+        return ""
      end
+
+     return self.config.html .. self.config.body .. self:safe_markdown(text) .. self.config["/body"] .. self.config["/html"]
   end
+
+-- Renders text; if that fails, reports the error through WoW's error handler (so BugSack and the
+-- like catch it) and returns the text as plain paragraphs instead, so a bug here can't break the
+-- frame showing it. Set LibStub("LibSimpleHTMLMarkdown-1.0").raise_errors to true to get the
+-- error itself, as the tests do.
+function LibMarkdown.safe_markdown(self, text)
+   if LibMarkdown.raise_errors then return self:cached_markdown(text) end
+   local ok, html = pcall(self.cached_markdown, self, text)
+   if ok then return html end
+   local handler = geterrorhandler and geterrorhandler()
+   if handler then
+      pcall(handler, "[" .. MARKDOWN10 .. "]: couldn't render markdown: " .. tostring(html))
+   end
+   return LibMarkdown.plain_text_html(text)
+end
+
+-- text as paragraphs of plain text: markup characters shown as themselves, blank lines between
+-- paragraphs, and other line breaks kept
+function LibMarkdown.plain_text_html(text)
+   text = text:gsub("\r\n?", "\n"):gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub("|", "||")
+   local out = {}
+   for paragraph in (text .. "\n\n"):gmatch("(.-)\n%s*\n") do
+      if paragraph:find("%S") then table.insert(out, "<p>" .. paragraph:gsub("\n", "<br />") .. "</p>") end
+   end
+   return table.concat(out, "\n")
+end
 
 -- Game links are ordinary links to a game link: [Fireball](spell:133), [Hearthstone](item:6948),
 -- [Honor](currency:1792), or [Level 10](achievement:6). SimpleHTML hands the link ("spell:133")

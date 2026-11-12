@@ -225,6 +225,13 @@ LibSimpleHTMLMarkdownShowcase = {
         md = "Roles: ![](atlas:groupfinder-icon-role-large-tank) ![](atlas:groupfinder-icon-role-large-heal) " ..
              "![](atlas:groupfinder-icon-role-large-dps), and a bigger one: ![](atlas:groupfinder-icon-role-large-tank 32x32)",
         expect = "Tank, healer, and damage role icons in the line, then a larger tank icon. They don't break the line." },
+      { name = "Game icons and inline textures",
+        md = "Cast ![](spell:133) [Fireball](spell:133), use ![](item:6948) [Hearthstone](item:6948), " ..
+             "earn ![](achievement:6 20x20) [Level 10](achievement:6). An unknown spell: ![](spell:999999999). " ..
+             "A texture in the line: ![](Interface\\\\ICONS\\\\ABILITY_SAP.PNG inline), and a block one:\n\n" ..
+             "![](Interface\\\\ICONS\\\\ABILITY_SAP.PNG 32x32)",
+        expect = "The Fireball, Hearthstone, and Level 10 icons before their links (the achievement icon bigger), " ..
+                 "a question mark for the unknown spell, a Sap icon inside the line, then a 32x32 Sap icon as a block." },
       { name = "Shortcodes",
         md = ":check: done, :x: not done, :question: unknown, :warning: careful. " ..
              "Costs 1:gold: 50:silver: 25:copper:. :tank: :healer: :dps: :unknown: stays as typed, as does 10:30:45.",

@@ -235,6 +235,10 @@ Term
 
 - An `atlas:` image is an atlas, shown inside the line (`<img>` only takes texture files). Without
   a size it's as tall as the text.
+- A `spell:`, `item:`, `currency:`, or `achievement:` image is that thing's icon, looked up when the
+  text is rendered and shown inside the line: `![](spell:133)`. An unknown id shows a question mark.
+- A texture marked `inline`, `![](Interface\\ICONS\\X 16x16 inline)`, is shown inside the line too.
+  Without `inline`, an image is a block of its own, as below.
 - A `:shortcode:` with a config entry under that key is replaced by it. Add your own, such as
   `[":myicon:"] = "|TInterface\\ICONS\\X:0|t"`. Unknown shortcodes are shown as typed, and
   `\:check:` is shown as `:check:`.
@@ -382,13 +386,22 @@ It has some sample code; to view it once it's loaded, type `/script LSHMDemoFram
 the library renders, for checking a change by eye in game. Each case shows its markdown, what you
 should see, and the result. Type `/lshm` to open it.
 
+## Errors
+
+If rendering ever fails, `:ToHTML()` doesn't raise the error into your code. It reports it through
+WoW's error handler (so BugSack and the like show it) and returns the text as plain paragraphs, so
+your frame still shows something readable. Set `raise_errors` on the library to get the error
+itself while developing.
+
 ## Tests
 
 `tests/run_tests.py` renders the showcase cases, the demo text, a set of probes, and some real
 AddOn news pages under Lua 5.1, and checks that each output is markup `SimpleHTML` can parse and
 matches its golden file in `tests/golden/`. It needs [lupa](https://pypi.org/project/lupa/)
 (`pip install lupa`). After an intended change to the output, run it with `--update` and review
-the golden file diffs. GitHub Actions runs the tests on every push, and before each release.
+the golden file diffs. It also renders a few hundred random documents built from every syntax the
+library knows, valid and malformed, and checks that each one renders to markup `SimpleHTML` can
+parse; set `FUZZ_SEED` and `FUZZ_COUNT` to try others. GitHub Actions runs the tests on every push, and before each release.
 
 `Demo.lua` and `Showcase.lua` are for development. Enable them in `LibSimpleHTMLMarkdown.xml`
 locally, but commit them commented out: `tests/check_release_files.py` fails the push's tests,

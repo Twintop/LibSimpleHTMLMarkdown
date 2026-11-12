@@ -57,6 +57,8 @@ def load_lua():
     lua.execute("strmatch = string.match; strfind = string.find")  # WoW globals LibStub uses
     lua.execute(read(ROOT, "LibStub", "LibStub.lua"))
     lua.execute(read(ROOT, "LibSimpleHTMLMarkdown.lua"))
+    # a render error raises, instead of becoming the plain text fallback players would see
+    lua.execute('LibStub("LibSimpleHTMLMarkdown-1.0").raise_errors = true')
     lua.execute(read(ROOT, "Showcase.lua"))  # stops after its cases, since CreateFrame is nil
     return lua
 
@@ -227,6 +229,15 @@ ASSERTIONS = [
     ("`:check:`", [":check:"], ["ReadyCheck"]),
     # game links are ordinary links
     ("[Fireball](spell:133)", ['<a href="spell:133">Fireball</a>'], []),
+    # a game icon is shown in the line (outside the game, the question mark icon)
+    ("a ![](spell:133) b ![](item:6948 20x20)",
+     ["a |TInterface\\ICONS\\INV_Misc_QuestionMark:0:0|t b |TInterface\\ICONS\\INV_Misc_QuestionMark:20:20|t"], ["<img"]),
+    ("![](quest:5)", ['<img src="quest:5" />'], []),
+    # a texture marked inline is shown in the line; one that isn't is a block
+    ("a ![](Interface\\\\ICONS\\\\X 16x16 inline) b", ["a |TInterface\\ICONS\\X:16:16|t b"], ["<img"]),
+    ("a ![](Interface\\\\ICONS\\\\X inline) b", ["a |TInterface\\ICONS\\X:0:0|t b"], []),
+    ("![](Interface\\\\ICONS\\\\X 16x16)", ['<img src="Interface\\ICONS\\X" width="16" height="16" />'], ["|T"]),
+    ("![i][r]\n\n[r]: item:6948", ["|TInterface\\ICONS\\INV_Misc_QuestionMark:0:0|t"], ["<img"]),
     # a loose item's later paragraphs start one list_indent in per level; nested lists keep their own
     ("- a\n\n  more", ["<br />\n\n|TInterface\\Store\\ServicesAtlas:0:1.5:0:0:1024:1024:1023:1024:1023:1024|tmore"], []),
     ("- a\n\n  - b\n\n    more b",
@@ -276,6 +287,149 @@ def check_cache(lua, failures):
     for problem in lua_list(lua.globals().CACHE_RESULTS):
         if problem:
             failures.append("cache: " + problem)
+
+
+FUZZ_INLINE = [
+    "word", "words here", "*em*", "**strong**", "***both***", "_em_", "__strong__", "snake_case", "~~gone~~",
+    "==hi==", "x^2^", "H~2~O", "`code`", "``a ` b``", "`|cffff0000x`", "[link](https://a.example/b_(c))",
+    "[ref]", "[ref][]", "[text][ref]", "![](Interface\\\\ICONS\\\\X 16x16)", "![](atlas:x 8x8)", "![](spell:133)",
+    "![i](Interface\\\\X 12x12 inline)", "<https://q.example>", "https://bare.example/x.", "www.w.example",
+    ":check:", ":nope:", "10:30", "{rt1}", "{Skull}", "&amp;", "&copy;", "&#169;", "&#x2014;", "&bogus;", "&",
+    "AT&T", "|cff00ff00green|r", "|TInterface\\\\X:0|t", "<b>bold</b>", "</a>", '<a href="x">', "<br>", "x<y",
+    "<3", ">", "\\*", "\\_", "\\#", "\\~", "\\^", "[^1]", "[^nope]", "{#id}", "é", "[", "]", "(", ")", "*", "_",
+    "**", "~", "^", "=", "|", "||", "\\", "<!-- c -->", "<span>s</span>", "#tag", "a*b*c", "[x](spell:133)",
+]
+
+
+def fuzz_document(rng):
+    """A random document built from every block and inline syntax, valid and malformed."""
+    def inline():
+        return " ".join(rng.choice(FUZZ_INLINE) for _ in range(rng.randint(1, 6)))
+
+    def block(depth=0):
+        kind = rng.randint(0, 17)
+        if kind == 0:
+            return "#" * rng.randint(1, 7) + rng.choice([" ", ""]) + inline() + rng.choice(["", " {#h}", " ##"])
+        if kind == 1:
+            return "\n".join(inline() + rng.choice(["", "  ", "\\"]) for _ in range(rng.randint(1, 3)))
+        if kind in (2, 3):
+            lines = []
+            for _ in range(rng.randint(1, 5)):
+                marker = rng.choice(["-", "*", "+", "1.", "2)", "a)", "b.", "i.", "ii]", "- [ ]", "- [x]"])
+                lines.append(" " * rng.choice([0, 0, 2, 4, 1]) + marker + " " + inline())
+                if rng.random() < 0.3:
+                    lines.append(rng.choice(["", "  " + inline(), "      code", "  ***", "  > q"]))
+            return "\n".join(lines) + rng.choice(["", "\n^"])
+        if kind == 4:
+            inner = block(depth + 1) if depth < 2 and rng.random() < 0.5 else inline()
+            prefix = rng.choice(["> ", ">", "> > ", ">> "])
+            head = rng.choice(["", "> [!NOTE]\n", "> [!WARNING]\n", "> [!bogus]\n"])
+            return head + "\n".join(prefix + line for line in inner.split("\n")) + rng.choice(["", "\nlazy", "\n>"])
+        if kind == 5:
+            fence = rng.choice(["```", "~~~", "````", "```lua"])
+            body = "\n".join(rng.choice(FUZZ_INLINE + ["```", "~~~", "<p>x</p>", "  x"]) for _ in range(rng.randint(0, 4)))
+            return fence + "\n" + body + rng.choice(["\n" + fence.rstrip("lua"), "\n```", ""])
+        if kind == 6:
+            return "\n".join("    " + rng.choice(FUZZ_INLINE) for _ in range(rng.randint(1, 3)))
+        if kind == 7:
+            cols = rng.randint(1, 4)
+            row = lambda: "| " + " | ".join(rng.choice(FUZZ_INLINE + ["", "a \\| b"]) for _ in range(rng.randint(1, cols + 1))) + " |"
+            delim = "|" + "|".join(rng.choice(["---", ":-:", "--:", ":--", "x"]) for _ in range(cols)) + "|"
+            return "\n".join([row(), delim] + [row() for _ in range(rng.randint(0, 3))])
+        if kind == 8:
+            return rng.choice(["<p>raw</p>", '<p align="center">c</p>', "<div>\n*d*\n</div>", "<hr/>", "<p>open",
+                               "</p>", "<p><p>n</p></p>", "<h1>h</h1>", "<img src='x'/>", "<!-- c -->"])
+        if kind == 9:
+            return inline() + "\n: " + inline() + rng.choice(["", "\n: " + inline()])
+        if kind == 10:
+            return "[^1]: " + inline() + rng.choice(["", "\n  more"])
+        if kind == 11:
+            return "[ref]: " + rng.choice(["https://r.example", "atlas:x", "Interface\\\\X", "<https://r.example>"])
+        if kind == 12:
+            return rng.choice(["---", "***", "___", "* * *", "===", "^"])
+        if kind == 13:
+            return inline() + "\n" + rng.choice(["===", "---"])
+        if kind == 14:
+            return ": " + inline()
+        if kind == 15:
+            return "\t" + inline() + "\n \t" + inline()
+        if kind == 16:
+            return "\n".join(block(depth + 1) for _ in range(2)) if depth < 2 else inline()
+        return inline()
+
+    return rng.choice(["\n", "\n\n", "\r\n"]).join(block() for _ in range(rng.randint(1, 8)))
+
+
+def check_fuzz(lua, failures):
+    """Random documents must render, and render to markup SimpleHTML can parse."""
+    import random
+    seed = int(os.environ.get("FUZZ_SEED", "1"))
+    count = int(os.environ.get("FUZZ_COUNT", "400"))
+    lib = lua.eval('(LibStub("LibSimpleHTMLMarkdown-1.0"))')
+    render = lua.eval(
+        "function(lib, s) local ok, r = pcall(lib.ToHTML, lib, s) if ok then return r end return 'ERROR: ' .. tostring(r) end")
+    rng, reported = random.Random(seed), 0
+    for i in range(count):
+        md = fuzz_document(rng)
+        bad = problems(render(lib, md), md)
+        if bad and reported < 5:
+            reported += 1
+            failures.append("fuzz (FUZZ_SEED=%d, document %d): %s\n    markdown: %r" % (seed, i, "; ".join(bad), md))
+        elif bad:
+            reported += 1
+    if reported > 5:
+        failures.append("fuzz: %d more documents failed" % (reported - 5))
+
+
+def check_fallback(lua, failures):
+    """A render error is reported to the error handler, and the text is shown as plain paragraphs."""
+    lua.execute("""
+        local l = LibStub("LibSimpleHTMLMarkdown-1.0")
+        local markdown = l.markdown
+        REPORTED = nil
+        geterrorhandler = function() return function(message) REPORTED = message end end
+        l.raise_errors, l.render_cache, l.render_cache_count = false, {}, 0
+        l.markdown = function() error("boom") end
+        FALLBACK = l:ToHTML("A <b>bold</b> & |cffff0000red|r line\\nnext line\\n\\nsecond paragraph")
+        l.markdown, l.raise_errors, geterrorhandler = markdown, true, nil
+    """)
+    html, reported = lua.globals().FALLBACK, lua.globals().REPORTED
+    want = ("<html><body><p>A &lt;b&gt;bold&lt;/b&gt; &amp; ||cffff0000red||r line<br />next line</p>\n"
+            "<p>second paragraph</p></body></html>")
+    if html != want:
+        failures.append("fallback: got %r, want %r" % (html, want))
+    if not reported or "boom" not in reported:
+        failures.append("fallback: the error wasn't reported to the error handler: %r" % reported)
+    for p in problems(html, ""):
+        failures.append("fallback: " + p)
+
+
+def check_game_icons(lua, failures):
+    """game_icon uses the client's API: C_Spell and C_Item on Retail, the older globals on Classic."""
+    lua.execute("""
+        local l = LibStub("LibSimpleHTMLMarkdown-1.0")
+        ICONS = {}
+        C_Spell = { GetSpellTexture = function(id) return id == 133 and 135812 or nil end }
+        C_Item = { GetItemIconByID = function(id) return 134414 end }
+        C_CurrencyInfo = { GetCurrencyInfo = function(id) return { iconFileID = 1455894 } end }
+        GetAchievementInfo = function(id) return id, "n", 10, true, 1, 1, 1, "d", 0, 236496 end
+        ICONS[1] = l.game_icon("spell", "133")
+        ICONS[2] = l.game_icon("spell", "999")
+        ICONS[3] = l.game_icon("item", "6948")
+        ICONS[4] = l.game_icon("currency", "1792")
+        ICONS[5] = l.game_icon("achievement", "6")
+        C_Spell, C_Item = nil, nil
+        GetSpellTexture = function(id) return "Interface\\\\ICONS\\\\Spell_Fire_FlameBolt" end
+        GetItemIcon = function(id) error("no such item") end
+        ICONS[6] = l.game_icon("spell", "133")
+        ICONS[7] = l.game_icon("item", "1")
+        C_CurrencyInfo, GetAchievementInfo, GetSpellTexture, GetItemIcon = nil, nil, nil, nil
+    """)
+    got = [str(x) for x in lua_list(lua.globals().ICONS)]
+    q = "Interface\\ICONS\\INV_Misc_QuestionMark"
+    want = ["135812", q, "134414", "1455894", "236496", "Interface\\ICONS\\Spell_Fire_FlameBolt", q]
+    if got != want:
+        failures.append("game_icon: got %r, want %r" % (got, want))
 
 
 def check_headings(lua, failures):
@@ -413,6 +567,9 @@ def main():
     check_upgrade(failures)
     check_headings(lua, failures)
     check_cache(lua, failures)
+    check_fallback(lua, failures)
+    check_game_icons(lua, failures)
+    check_fuzz(lua, failures)
 
     if update:
         print("updated %d golden files" % written)

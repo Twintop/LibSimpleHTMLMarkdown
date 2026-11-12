@@ -22,6 +22,12 @@ WoW extensions:
   `:healer:`, and `:dps:` become icons. Add your own as config keys, like `[":myicon:"]`.
 - `:ShowLinkTooltip(owner, link)` and `:HideLinkTooltip()` show the game's tooltip for links such as
   `[Fireball](spell:133)` from a frame's hyperlink scripts.
+- Game icons: `![](spell:133)`, `![](item:6948 20x20)`, and the same for currencies and achievements show
+  that thing's icon inside the line.
+- Inline textures: `![](Interface\ICONS\X 16x16 inline)` is shown inside the line instead of as a block.
+
+If rendering fails, `:ToHTML()` reports the error through WoW's error handler and returns the text as plain
+paragraphs, instead of raising the error into the AddOn showing it.
 
 `\^`, `\=`, and `\:` are backslash escapes, for text these would otherwise change.
 
