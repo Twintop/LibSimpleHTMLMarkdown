@@ -319,6 +319,10 @@ matches its golden file in `tests/golden/`. It needs [lupa](https://pypi.org/pro
 (`pip install lupa`). After an intended change to the output, run it with `--update` and review
 the golden file diffs. GitHub Actions runs the tests on every push, and before each release.
 
+`Demo.lua` and `Showcase.lua` are for development. Enable them in `LibSimpleHTMLMarkdown.xml`
+locally, but commit them commented out: `tests/check_release_files.py` fails the push's tests,
+and stops a release tag from being packaged, if the TOC or an XML file it loads would load one.
+
 ## Changes from LibMarkdown
 
 LibSimpleHTMLMarkdown 1.0 minor 1 starts from LibMarkdown-1.0 minor 9, the last version on

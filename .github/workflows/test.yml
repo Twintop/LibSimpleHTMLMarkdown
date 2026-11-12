@@ -26,3 +26,6 @@ jobs:
 
       - name: Run the tests
         run: python tests/run_tests.py
+
+      - name: Require Demo.lua and Showcase.lua to be commented out
+        run: python tests/check_release_files.py
