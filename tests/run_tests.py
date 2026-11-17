@@ -253,6 +253,41 @@ ASSERTIONS = [
 ]
 
 
+# hard_breaks: (markdown, strings the output must contain, strings it must not contain)
+HARD_BREAK_ASSERTIONS = [
+    # every line break is one, and the markers that make one in Markdown aren't shown
+    ("one\ntwo", ["<p>one<br/>two</p>"], []),
+    ("one  \ntwo\\\nthree", ["one<br/>two<br/>three"], ["\\", " <br"]),
+    # a blank line after a paragraph is an empty line, but not at the end of the document
+    ("one\n\ntwo\n\n", ["<p>one</p><br />", "<p>two</p>"], ["two</p><br />"]),
+    ("one\n# Head", ["<p>one</p>"], ["one</p><br />"]),
+    # quotes and lists keep their own spacing; their lines break, each line starting with its bar
+    ("> a\n> b\n>\n> c", [QBAR + "a<br />" + QBAR + "b<br />" + QBAR + NBSP + "<br />" + QBAR + "c"], []),
+    ("- a\n  b\n- c", ["a<br/>b"], []),
+    # code is untouched
+    ("```\nx\ny\n```", [], ["x<br/>"]),
+]
+
+
+def check_hard_breaks(lua, failures):
+    lib = lua.eval('(LibStub("LibSimpleHTMLMarkdown-1.0"))')
+    render = lua.eval("function(r, s, o) return r:ToHTML(s, o) end")
+    options = lua.eval("{ hard_breaks = true }")
+    for md, present, absent in HARD_BREAK_ASSERTIONS:
+        html = render(lib, md, options)
+        for s in present:
+            if s not in html:
+                failures.append("hard_breaks %r: output lacks %r\n    %s" % (md, s, html))
+        for s in absent:
+            if s in html:
+                failures.append("hard_breaks %r: output contains %r\n    %s" % (md, s, html))
+        for p in problems(html, md):
+            failures.append("hard_breaks %r: %s" % (md, p))
+    # the option is part of the render cache's key
+    if "<br" in render(lib, "one\ntwo", None):
+        failures.append("hard_breaks: a render without the option came from the cache")
+
+
 def check_cache(lua, failures):
     """Repeat renders come from the cache, and any change to the settings renders again."""
     lua.execute("""
@@ -367,11 +402,13 @@ def check_fuzz(lua, failures):
     count = int(os.environ.get("FUZZ_COUNT", "400"))
     lib = lua.eval('(LibStub("LibSimpleHTMLMarkdown-1.0"))')
     render = lua.eval(
-        "function(lib, s) local ok, r = pcall(lib.ToHTML, lib, s) if ok then return r end return 'ERROR: ' .. tostring(r) end")
+        "function(lib, s, o) local ok, r = pcall(lib.ToHTML, lib, s, o) if ok then return r end return 'ERROR: ' .. tostring(r) end")
+    hard = lua.eval("{ hard_breaks = true }")
     rng, reported = random.Random(seed), 0
     for i in range(count):
         md = fuzz_document(rng)
-        bad = problems(render(lib, md), md)
+        # each document with the default settings, and with hard_breaks
+        bad = problems(render(lib, md, None), md) + ["hard_breaks: " + p for p in problems(render(lib, md, hard), md)]
         if bad and reported < 5:
             reported += 1
             failures.append("fuzz (FUZZ_SEED=%d, document %d): %s\n    markdown: %r" % (seed, i, "; ".join(bad), md))
@@ -564,6 +601,7 @@ def main():
                 failures.append("assertion %r: output contains %r\n    %s" % (md, s, html))
 
     check_state(lua, failures)
+    check_hard_breaks(lua, failures)
     check_upgrade(failures)
     check_headings(lua, failures)
     check_cache(lua, failures)

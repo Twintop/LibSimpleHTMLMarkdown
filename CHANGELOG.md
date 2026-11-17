@@ -3,6 +3,12 @@
 Releases are numbered `<major>.0.<minor>` after the LibStub version they register, so 1.0.1 is
 `LibSimpleHTMLMarkdown-1.0` minor 1. Each release's upload changelog is its own section below.
 
+## 1.0.5
+
+- The `hard_breaks` setting, for text typed as in chat, such as notes: every line break in a paragraph is
+  shown, and a blank line after a paragraph is an empty line, as in a GitHub comment. It's off by default,
+  so other AddOns' text renders as before.
+
 ## 1.0.4
 
 Syntax from other Markdown flavors (not in CommonMark or GFM, but what other renderers use):

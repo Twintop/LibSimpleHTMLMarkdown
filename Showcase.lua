@@ -251,6 +251,12 @@ LibSimpleHTMLMarkdownShowcase = {
       { name = "Defaults again",
         md = "*em* and **strong**\n\n- a list item",
         expect = "The default em color and * marker: the previous case's options didn't stick." },
+      { name = "Hard line breaks",
+        md = "Step 1 is Westfall.\nStep 2 is the Barrens.\n\nA second paragraph, with a line\nthat ends with two spaces  \n" ..
+             "and one with a backslash\\\nand then\n\n> a quote\n> on two lines\n\n- a list item\n  continued",
+        options = { hard_breaks = true },
+        expect = "Each line on its own line, without a backslash, and an empty line after each paragraph; " ..
+                 "the quote's two lines each with a bar, and the item's two lines." },
     } },
 }
 
